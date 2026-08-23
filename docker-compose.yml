@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hostelhq_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hostelhq}
+      POSTGRES_USER: ${DB_USER:-hostelhq}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-hostelhq_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-hostelhq}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hostelhq_backend
+    restart: unless-stopped
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./backend:/app
+      - media_files:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.local
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-hostelhq}
+      - DB_USER=${DB_USER:-hostelhq}
+      - DB_PASSWORD=${DB_PASSWORD:-hostelhq_secret}
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0,10.0.2.2
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  media_files:

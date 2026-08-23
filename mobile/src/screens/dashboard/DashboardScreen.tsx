@@ -1,0 +1,350 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  RefreshControl,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import { VictoryChart, VictoryBar, VictoryLine, VictoryAxis, VictoryTheme, VictoryGroup, VictoryLegend } from 'victory-native';
+import { reportsApi } from '../../api/reports';
+import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
+import { Card, StatCard, Badge } from '../../components/Card';
+import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
+import { formatCurrency } from '../../utils/formatters';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CHART_WIDTH = SCREEN_WIDTH - Spacing[8];
+
+export default function DashboardScreen({ navigation }: any) {
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: reportsApi.getDashboard,
+    refetchInterval: 60000, // auto-refresh every minute
+  });
+
+  if (isLoading) {
+    return <ScreenContainer loading />;
+  }
+
+  if (error || !data) {
+    return (
+      <ScreenContainer error="Failed to load dashboard. Check your connection." />
+    );
+  }
+
+  const { occupancy, vacant_bed_list, monthly_revenue, monthly_expenses, net_pl, pl_trend, pending_dues } = data;
+  const isProfit = net_pl >= 0;
+
+  // P&L chart data
+  const chartData = pl_trend.slice(-6); // last 6 months for readability
+
+  return (
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} />}
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Dashboard</Text>
+          <Text style={styles.subGreeting}>
+            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+        </View>
+        <View style={styles.occupancyBadge}>
+          <Text style={styles.occupancyPct}>{occupancy.occupancy_pct}%</Text>
+          <Text style={styles.occupancyLabel}>Full</Text>
+        </View>
+      </View>
+
+      {/* Occupancy Cards */}
+      <View style={styles.row}>
+        <StatCard
+          label="Total Beds"
+          value={occupancy.total_beds}
+          icon="🛏️"
+          style={styles.flexCard}
+        />
+        <StatCard
+          label="Occupied"
+          value={occupancy.occupied_beds}
+          accent={Colors.occupied}
+          icon="👤"
+          style={styles.flexCard}
+        />
+        <StatCard
+          label="Vacant"
+          value={occupancy.vacant_beds}
+          accent={Colors.vacant}
+          icon="✅"
+          style={styles.flexCard}
+        />
+      </View>
+
+      {/* Revenue / Expense / P&L */}
+      <View style={styles.row}>
+        <StatCard
+          label="Revenue (this month)"
+          value={formatCurrency(monthly_revenue)}
+          accent={Colors.success}
+          icon="💰"
+          style={styles.halfCard}
+        />
+        <StatCard
+          label="Expenses (this month)"
+          value={formatCurrency(monthly_expenses.total)}
+          accent={Colors.danger}
+          icon="📤"
+          style={styles.halfCard}
+        />
+      </View>
+      <Card style={[styles.plCard, { borderLeftColor: isProfit ? Colors.success : Colors.danger }]}>
+        <Text style={styles.plLabel}>Net P&L — This Month</Text>
+        <Text style={[styles.plValue, { color: isProfit ? Colors.success : Colors.danger }]}>
+          {isProfit ? '+' : ''}{formatCurrency(net_pl)}
+        </Text>
+      </Card>
+
+      {/* P&L Trend Chart */}
+      <Card title="Revenue vs Expenses (6 months)">
+        <VictoryChart
+          width={CHART_WIDTH - Spacing[8]}
+          height={200}
+          domainPadding={20}
+          padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
+        >
+          <VictoryAxis
+            tickFormat={(t: string) => t}
+            tickValues={chartData.map((d) => d.month_label)}
+            style={{
+              tickLabels: { fontSize: 9, fill: Colors.textMuted, angle: -30 },
+              axis: { stroke: Colors.border },
+            }}
+          />
+          <VictoryAxis
+            dependentAxis
+            tickFormat={(t: number) => `₹${(t / 1000).toFixed(0)}k`}
+            style={{
+              tickLabels: { fontSize: 9, fill: Colors.textMuted },
+              axis: { stroke: 'transparent' },
+              grid: { stroke: Colors.border, strokeDasharray: '4,4' },
+            }}
+          />
+          <VictoryGroup offset={12}>
+            <VictoryBar
+              data={chartData.map((d) => ({ x: d.month_label, y: d.revenue }))}
+              style={{ data: { fill: Colors.success, opacity: 0.85, width: 10 } }}
+            />
+            <VictoryBar
+              data={chartData.map((d) => ({ x: d.month_label, y: d.expenses }))}
+              style={{ data: { fill: Colors.danger, opacity: 0.85, width: 10 } }}
+            />
+          </VictoryGroup>
+        </VictoryChart>
+        <View style={styles.chartLegend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
+            <Text style={styles.legendLabel}>Revenue</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: Colors.danger }]} />
+            <Text style={styles.legendLabel}>Expenses</Text>
+          </View>
+        </View>
+      </Card>
+
+      {/* Vacant Beds */}
+      {vacant_bed_list.length > 0 && (
+        <Card title={`Vacant Beds (${vacant_bed_list.length})`}>
+          <View style={styles.bedGrid}>
+            {vacant_bed_list.slice(0, 8).map((bed) => (
+              <View key={bed.bed_id} style={styles.bedChip}>
+                <Text style={styles.bedChipRoom}>Rm {bed.room_number}</Text>
+                <Text style={styles.bedChipLabel}>Bed {bed.bed_label}</Text>
+                <Text style={styles.bedChipType}>{bed.sharing_type}</Text>
+              </View>
+            ))}
+            {vacant_bed_list.length > 8 && (
+              <TouchableOpacity
+                style={[styles.bedChip, styles.moreBedChip]}
+                onPress={() => navigation.navigate('Rooms')}
+              >
+                <Text style={styles.moreBedText}>+{vacant_bed_list.length - 8} more</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </Card>
+      )}
+
+      {/* Pending Dues */}
+      <Card
+        title={`Pending Dues (${pending_dues.residents_count} residents)`}
+        rightElement={
+          <Text style={styles.duesTotal}>{formatCurrency(pending_dues.total_outstanding)}</Text>
+        }
+      >
+        {pending_dues.residents.length === 0 ? (
+          <Text style={styles.allClearText}>✅ All dues are cleared!</Text>
+        ) : (
+          <>
+            {pending_dues.residents.slice(0, 5).map((r) => (
+              <TouchableOpacity
+                key={r.resident_id}
+                style={styles.dueRow}
+                onPress={() => navigation.navigate('Payments', { screen: 'DuesList' })}
+              >
+                <View style={styles.dueInfo}>
+                  <Text style={styles.dueName}>{r.resident_name}</Text>
+                  <Text style={styles.dueRoom}>Room {r.room_number || '—'}</Text>
+                </View>
+                <View style={styles.dueRight}>
+                  <Text style={styles.dueAmount}>{formatCurrency(r.total_balance)}</Text>
+                  {r.overdue_months_count > 0 && (
+                    <Badge
+                      label={`${r.overdue_months_count}mo overdue`}
+                      bg={Colors.dangerLight}
+                      color={Colors.danger}
+                    />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+            {pending_dues.residents.length > 5 && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Payments', { screen: 'DuesList' })}
+              >
+                <Text style={styles.seeAllDues}>
+                  See all {pending_dues.residents.length} residents →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Expenses breakdown */}
+      {Object.keys(monthly_expenses.by_category).length > 0 && (
+        <Card title="Expenses by Category">
+          {Object.entries(monthly_expenses.by_category).map(([cat, amt]) => (
+            <View key={cat} style={styles.expenseRow}>
+              <Text style={styles.expenseCat}>{cat}</Text>
+              <Text style={styles.expenseAmt}>{formatCurrency(amt)}</Text>
+            </View>
+          ))}
+        </Card>
+      )}
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: Colors.background },
+  content: { padding: Spacing[4], gap: Spacing[4], paddingBottom: Spacing[10] },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing[2],
+  },
+  greeting: {
+    fontSize: Typography.fontSize['2xl'],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  subGreeting: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  occupancyBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.lg,
+    paddingHorizontal: Spacing[4],
+    paddingVertical: Spacing[2],
+    alignItems: 'center',
+  },
+  occupancyPct: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.white,
+  },
+  occupancyLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.gray300,
+  },
+
+  row: { flexDirection: 'row', gap: Spacing[3] },
+  flexCard: { flex: 1 },
+  halfCard: { flex: 1 },
+
+  plCard: {
+    borderLeftWidth: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  plLabel: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  plValue: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+  },
+
+  chartLegend: { flexDirection: 'row', gap: Spacing[4], justifyContent: 'center', marginTop: Spacing[1] },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing[1] },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { fontSize: Typography.fontSize.xs, color: Colors.textSecondary },
+
+  bedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] },
+  bedChip: {
+    backgroundColor: Colors.vacantBg,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing[3],
+    paddingVertical: Spacing[2],
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.vacant + '40',
+  },
+  bedChipRoom: { fontSize: 11, fontWeight: Typography.fontWeight.bold, color: Colors.vacant },
+  bedChipLabel: { fontSize: Typography.fontSize.sm, color: Colors.textPrimary },
+  bedChipType: { fontSize: 10, color: Colors.textMuted },
+  moreBedChip: { backgroundColor: Colors.gray100, borderColor: Colors.border },
+  moreBedText: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary, fontWeight: Typography.fontWeight.medium },
+
+  dueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  dueInfo: { gap: 2 },
+  dueName: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.medium, color: Colors.textPrimary },
+  dueRoom: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  dueRight: { alignItems: 'flex-end', gap: Spacing[1] },
+  dueAmount: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.bold, color: Colors.danger },
+  duesTotal: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.bold, color: Colors.danger },
+  allClearText: { fontSize: Typography.fontSize.base, color: Colors.success, textAlign: 'center', paddingVertical: Spacing[4] },
+  seeAllDues: { fontSize: Typography.fontSize.sm, color: Colors.primary, textAlign: 'center', marginTop: Spacing[3], fontWeight: Typography.fontWeight.medium },
+
+  expenseRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing[2],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  expenseCat: { fontSize: Typography.fontSize.base, color: Colors.textPrimary },
+  expenseAmt: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.textPrimary },
+});
