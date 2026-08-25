@@ -5,19 +5,37 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Dimensions,
   TouchableOpacity,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { VictoryChart, VictoryBar, VictoryLine, VictoryAxis, VictoryTheme, VictoryGroup, VictoryLegend } from 'victory-native';
+
 import { reportsApi } from '../../api/reports';
 import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
 import { Card, StatCard, Badge } from '../../components/Card';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CHART_WIDTH = SCREEN_WIDTH - Spacing[8];
+// ── Pure-RN bar chart (no external charting library) ─────────────────────────
+function SimpleBarChart({ data }: { data: Array<{ month_label: string; revenue: number; expenses: number }> }) {
+  if (!data || data.length === 0) {
+    return <Text style={{ color: Colors.textMuted, fontSize: 13, padding: 16 }}>No trend data yet.</Text>;
+  }
+  const maxVal = Math.max(...data.flatMap((d) => [d.revenue, d.expenses]), 1);
+  const BAR_HEIGHT = 160;
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, paddingVertical: 8 }}>
+      {data.map((d) => (
+        <View key={d.month_label} style={{ flex: 1, alignItems: 'center', gap: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 2, height: BAR_HEIGHT }}>
+            <View style={{ width: 8, height: Math.max(4, (d.revenue / maxVal) * BAR_HEIGHT), backgroundColor: Colors.success, borderRadius: 3 }} />
+            <View style={{ width: 8, height: Math.max(4, (d.expenses / maxVal) * BAR_HEIGHT), backgroundColor: Colors.danger, borderRadius: 3 }} />
+          </View>
+          <Text style={{ fontSize: 9, color: Colors.textMuted, textAlign: 'center' }}>{d.month_label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export default function DashboardScreen({ navigation }: any) {
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
@@ -111,42 +129,9 @@ export default function DashboardScreen({ navigation }: any) {
         </Text>
       </Card>
 
-      {/* P&L Trend Chart */}
+      {/* P&L Trend Chart — pure RN, no charting library */}
       <Card title="Revenue vs Expenses (6 months)">
-        <VictoryChart
-          width={CHART_WIDTH - Spacing[8]}
-          height={200}
-          domainPadding={20}
-          padding={{ top: 10, bottom: 40, left: 50, right: 20 }}
-        >
-          <VictoryAxis
-            tickFormat={(t: string) => t}
-            tickValues={chartData.map((d) => d.month_label)}
-            style={{
-              tickLabels: { fontSize: 9, fill: Colors.textMuted, angle: -30 },
-              axis: { stroke: Colors.border },
-            }}
-          />
-          <VictoryAxis
-            dependentAxis
-            tickFormat={(t: number) => `₹${(t / 1000).toFixed(0)}k`}
-            style={{
-              tickLabels: { fontSize: 9, fill: Colors.textMuted },
-              axis: { stroke: 'transparent' },
-              grid: { stroke: Colors.border, strokeDasharray: '4,4' },
-            }}
-          />
-          <VictoryGroup offset={12}>
-            <VictoryBar
-              data={chartData.map((d) => ({ x: d.month_label, y: d.revenue }))}
-              style={{ data: { fill: Colors.success, opacity: 0.85, width: 10 } }}
-            />
-            <VictoryBar
-              data={chartData.map((d) => ({ x: d.month_label, y: d.expenses }))}
-              style={{ data: { fill: Colors.danger, opacity: 0.85, width: 10 } }}
-            />
-          </VictoryGroup>
-        </VictoryChart>
+        <SimpleBarChart data={chartData} />
         <View style={styles.chartLegend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />

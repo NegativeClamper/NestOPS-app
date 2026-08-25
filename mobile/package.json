@@ -18,7 +18,6 @@
     "react-native-safe-area-context": "^5.9.1",
     "react-native-screens": "^4.27.0",
     "react-native-svg": "^15.15.5",
-    "victory-native": "^41.26.0",
     "zustand": "^5.0.15"
   },
   "scripts": {
@@ -27,5 +26,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "babel-preset-expo": "^57.0.8",
+    "typescript": "~6.0.3"
+  }
 }

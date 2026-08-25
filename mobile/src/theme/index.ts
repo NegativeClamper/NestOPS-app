@@ -11,6 +11,7 @@ export const Colors = {
   accent: '#F59E0B',
   accentLight: '#FCD34D',
   accentDark: '#D97706',
+  accentBg: '#FEF3C7',
 
   // Semantic
   success: '#10B981',
