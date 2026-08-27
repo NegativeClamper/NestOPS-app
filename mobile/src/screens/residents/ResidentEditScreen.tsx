@@ -106,13 +106,15 @@ export default function ResidentEditScreen({ route, navigation }: any) {
     mutation.mutate(formData);
   };
 
+  // Move the loading check UP here
+  if (isLoading) return <ScreenContainer loading />;
+
   // All beds available in picker = vacant beds + current bed (if assigned)
   const availableBeds: Bed[] = [
-    ...vacantBeds,
+    ...(vacantBeds || []),
     // Don't double-add if their current bed is already vacant somehow
   ];
 
-  if (isLoading) return <ScreenContainer loading />;
 
   return (
     <>
