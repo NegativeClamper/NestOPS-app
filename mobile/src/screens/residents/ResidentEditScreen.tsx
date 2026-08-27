@@ -107,12 +107,17 @@ export default function ResidentEditScreen({ route, navigation }: any) {
   };
 
   // Move the loading check UP here
-  if (isLoading) return <ScreenContainer loading />;
+  if (isLoading) return <ScreenContainer loading><></></ScreenContainer>;
 
-  // All beds available in picker = vacant beds + current bed (if assigned)
+  // 1. Extract the actual array, whether it's raw or hiding inside DRF's 'results'
+  const safeVacantBeds = Array.isArray(vacantBeds) 
+    ? vacantBeds 
+    : ((vacantBeds as any)?.results || []);
+
+  // 2. Safely spread the guaranteed array
   const availableBeds: Bed[] = [
-    ...(vacantBeds || []),
-    // Don't double-add if their current bed is already vacant somehow
+    ...safeVacantBeds,
+    // Add the current bed logic here if you have it
   ];
 
 
