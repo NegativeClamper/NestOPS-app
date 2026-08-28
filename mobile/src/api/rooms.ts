@@ -34,8 +34,8 @@ export interface Room {
 export const roomsApi = {
   // Sharing types
   getSharingTypes: async (): Promise<SharingType[]> => {
-    const response = await apiClient.get<SharingType[]>('/rooms/sharing-types/');
-    return response.data;
+    const response = await apiClient.get('/rooms/sharing-types/');
+    return response.data.results ?? response.data;
   },
 
   createSharingType: async (data: Omit<SharingType, 'id'>): Promise<SharingType> => {

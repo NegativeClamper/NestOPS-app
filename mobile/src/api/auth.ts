@@ -53,7 +53,7 @@ export const authApi = {
   // Staff management (Owner only)
   getStaff: async () => {
     const response = await apiClient.get('/auth/staff/');
-    return response.data;
+    return response.data.results ?? response.data;
   },
 
   createStaff: async (data: {
