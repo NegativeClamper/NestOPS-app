@@ -22,6 +22,7 @@ import ResidentEditScreen from '../screens/residents/ResidentEditScreen';
 import RoomListScreen from '../screens/rooms/RoomListScreen';
 import RoomDetailScreen from '../screens/rooms/RoomDetailScreen';
 import RoomCreateScreen from '../screens/rooms/RoomCreateScreen';
+import RoomEditScreen from '../screens/rooms/RoomEditScreen';
 
 // Payments / Fees
 import DuesListScreen from '../screens/fees/DuesListScreen';
@@ -77,7 +78,7 @@ function RoomsStack() {
       <Stack.Screen name="RoomList" component={RoomListScreen} options={{ title: 'Rooms' }} />
       <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: 'Room Detail' }} />
       <Stack.Screen name="RoomCreate" component={RoomCreateScreen} options={{ title: 'Add Room' }} />
-      {/* RoomEdit — reuse RoomCreate with prefilled props in a future sprint */}
+      <Stack.Screen name="RoomEdit" component={RoomEditScreen} options={{ title: 'Edit Room' }} />
     </Stack.Navigator>
   );
 }
