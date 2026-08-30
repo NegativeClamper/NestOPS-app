@@ -99,5 +99,14 @@ export const roomsApi = {
     });
     return response.data;
   },
+
+  updateBed: async (bedId: number, bedLabel: string): Promise<Bed> => {
+    const response = await apiClient.patch<Bed>(`/rooms/beds/${bedId}/relabel/`, { bed_label: bedLabel });
+    return response.data;
+  },
+
+  deleteBed: async (bedId: number): Promise<void> => {
+    await apiClient.delete(`/rooms/beds/${bedId}/delete/`);
+  },
 };
 

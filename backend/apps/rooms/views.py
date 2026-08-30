@@ -67,7 +67,9 @@ class BedViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Read-only listing of all beds — used by dashboard for occupancy.
     Beds are created/managed through their parent Room.
-    POST /api/beds/create/ exists for adding beds to a room (Owner only).
+    POST /api/rooms/beds/create-bed/      — add a bed to a room (Owner only)
+    PATCH /api/rooms/beds/<id>/relabel/   — rename a bed label (Owner only)
+    DELETE /api/rooms/beds/<id>/delete/   — remove a vacant bed (Owner only, occupied beds rejected)
     """
     queryset = (
         Bed.objects.select_related("room", "room__sharing_type")
@@ -83,20 +85,46 @@ class BedViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="create-bed", permission_classes=[IsOwner])
     def create_bed(self, request):
-        """POST /api/beds/create-bed/ — Owner adds a bed to a room."""
+        """POST /api/rooms/beds/create-bed/ — Owner adds a bed to a room."""
         serializer = BedSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["patch"], url_path="relabel", permission_classes=[IsOwner])
+    def relabel_bed(self, request, pk=None):
+        """PATCH /api/rooms/beds/<id>/relabel/ — Owner renames a bed label."""
+        bed = self.get_object()
+        new_label = request.data.get("bed_label", "").strip()
+        if not new_label:
+            return Response(
+                {"detail": "bed_label is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        bed.bed_label = new_label
+        bed.save(update_fields=["bed_label", "updated_at"])
+        serializer = BedSerializer(bed)
+        return Response(serializer.data)
+
     @action(detail=True, methods=["delete"], url_path="delete", permission_classes=[IsOwner])
     def delete_bed(self, request, pk=None):
-        """DELETE /api/beds/{id}/delete/ — Owner deletes a bed."""
+        """DELETE /api/rooms/beds/<id>/delete/ — Owner deletes a bed."""
         bed = self.get_object()
         if bed.status == Bed.Status.OCCUPIED:
+            # Resolve resident name for a helpful message
+            try:
+                resident_name = bed.resident.name
+            except Exception:
+                resident_name = "a resident"
             return Response(
-                {"detail": "Cannot delete an occupied bed. Check out the resident first."},
+                {
+                    "detail": (
+                        f"Cannot delete this bed — it is currently occupied by {resident_name}. "
+                        "Move or check them out before removing it."
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         bed.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
