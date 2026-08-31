@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  TouchableOpacity,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
@@ -54,7 +53,7 @@ export default function DashboardScreen({ navigation }: any) {
     );
   }
 
-  const { occupancy, vacant_bed_list, monthly_revenue, monthly_expenses, net_pl, pl_trend, pending_dues } = data;
+  const { monthly_revenue, monthly_expenses, net_pl, pl_trend, pending_dues } = data;
   const isProfit = net_pl >= 0;
 
   // P&L chart data
@@ -69,41 +68,12 @@ export default function DashboardScreen({ navigation }: any) {
     >
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>Dashboard</Text>
-          <Text style={styles.subGreeting}>
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </Text>
-        </View>
-        <View style={styles.occupancyBadge}>
-          <Text style={styles.occupancyPct}>{occupancy.occupancy_pct}%</Text>
-          <Text style={styles.occupancyLabel}>Full</Text>
-        </View>
+        <Text style={styles.greeting}>Dashboard</Text>
+        <Text style={styles.subGreeting}>
+          {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </Text>
       </View>
 
-      {/* Occupancy Cards */}
-      <View style={styles.row}>
-        <StatCard
-          label="Total Beds"
-          value={occupancy.total_beds}
-          icon="🛏️"
-          style={styles.flexCard}
-        />
-        <StatCard
-          label="Occupied"
-          value={occupancy.occupied_beds}
-          accent={Colors.occupied}
-          icon="👤"
-          style={styles.flexCard}
-        />
-        <StatCard
-          label="Vacant"
-          value={occupancy.vacant_beds}
-          accent={Colors.vacant}
-          icon="✅"
-          style={styles.flexCard}
-        />
-      </View>
 
       {/* Revenue / Expense / P&L */}
       <View style={styles.row}>
@@ -143,29 +113,6 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         </View>
       </Card>
-
-      {/* Vacant Beds */}
-      {vacant_bed_list.length > 0 && (
-        <Card title={`Vacant Beds (${vacant_bed_list.length})`}>
-          <View style={styles.bedGrid}>
-            {vacant_bed_list.slice(0, 8).map((bed) => (
-              <View key={bed.bed_id} style={styles.bedChip}>
-                <Text style={styles.bedChipRoom}>Rm {bed.room_number}</Text>
-                <Text style={styles.bedChipLabel}>Bed {bed.bed_label}</Text>
-                <Text style={styles.bedChipType}>{bed.sharing_type}</Text>
-              </View>
-            ))}
-            {vacant_bed_list.length > 8 && (
-              <TouchableOpacity
-                style={[styles.bedChip, styles.moreBedChip]}
-                onPress={() => navigation.navigate('Rooms')}
-              >
-                <Text style={styles.moreBedText}>+{vacant_bed_list.length - 8} more</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </Card>
-      )}
 
       {/* Pending Dues */}
       <Card
@@ -233,9 +180,6 @@ const styles = StyleSheet.create({
   content: { padding: Spacing[4], gap: Spacing[4], paddingBottom: Spacing[10] },
 
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: Spacing[2],
   },
   greeting: {
@@ -290,21 +234,6 @@ const styles = StyleSheet.create({
   legendDot: { width: 10, height: 10, borderRadius: 5 },
   legendLabel: { fontSize: Typography.fontSize.xs, color: Colors.textSecondary },
 
-  bedGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing[2] },
-  bedChip: {
-    backgroundColor: Colors.vacantBg,
-    borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing[3],
-    paddingVertical: Spacing[2],
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.vacant + '40',
-  },
-  bedChipRoom: { fontSize: 11, fontWeight: Typography.fontWeight.bold, color: Colors.vacant },
-  bedChipLabel: { fontSize: Typography.fontSize.sm, color: Colors.textPrimary },
-  bedChipType: { fontSize: 10, color: Colors.textMuted },
-  moreBedChip: { backgroundColor: Colors.gray100, borderColor: Colors.border },
-  moreBedText: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary, fontWeight: Typography.fontWeight.medium },
 
   dueRow: {
     flexDirection: 'row',

@@ -18,11 +18,6 @@ import ResidentDetailScreen from '../screens/residents/ResidentDetailScreen';
 import ResidentCreateScreen from '../screens/residents/ResidentCreateScreen';
 import ResidentEditScreen from '../screens/residents/ResidentEditScreen';
 
-// Rooms
-import RoomListScreen from '../screens/rooms/RoomListScreen';
-import RoomDetailScreen from '../screens/rooms/RoomDetailScreen';
-import RoomCreateScreen from '../screens/rooms/RoomCreateScreen';
-import RoomEditScreen from '../screens/rooms/RoomEditScreen';
 
 // Payments / Fees
 import DuesListScreen from '../screens/fees/DuesListScreen';
@@ -43,7 +38,6 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS: Record<string, string> = {
   Dashboard: '📊',
   Residents: '👤',
-  Rooms: '🏠',
   Payments: '💰',
   Expenses: '📤',
   Settings: '⚙️',
@@ -72,16 +66,6 @@ function ResidentsStack() {
   );
 }
 
-function RoomsStack() {
-  return (
-    <Stack.Navigator screenOptions={stackScreenOptions}>
-      <Stack.Screen name="RoomList" component={RoomListScreen} options={{ title: 'Rooms' }} />
-      <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: 'Room Detail' }} />
-      <Stack.Screen name="RoomCreate" component={RoomCreateScreen} options={{ title: 'Add Room' }} />
-      <Stack.Screen name="RoomEdit" component={RoomEditScreen} options={{ title: 'Edit Room' }} />
-    </Stack.Navigator>
-  );
-}
 
 function PaymentsStack() {
   return (
@@ -160,7 +144,6 @@ function AppTabs() {
         }}
       />
       <Tab.Screen name="Residents" component={ResidentsStack} />
-      <Tab.Screen name="Rooms" component={RoomsStack} />
       <Tab.Screen name="Payments" component={PaymentsStack} />
       <Tab.Screen name="Expenses" component={ExpensesStack} />
       <Tab.Screen name="Settings" component={SettingsStack} />
