@@ -15,6 +15,7 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
 class ExpenseSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     category_icon = serializers.CharField(source="category.icon", read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
     recorded_by_name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -22,6 +23,7 @@ class ExpenseSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "category", "category_name", "category_icon",
+            "hostel", "hostel_name",
             "amount", "date", "description", "receipt",
             "recorded_by", "recorded_by_name",
             "created_at", "updated_at",

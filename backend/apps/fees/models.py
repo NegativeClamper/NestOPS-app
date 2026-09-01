@@ -1,5 +1,6 @@
 from django.db import models
 from apps.residents.models import Resident
+from apps.hostels.models import Hostel
 
 
 class Payment(models.Model):
@@ -22,6 +23,14 @@ class Payment(models.Model):
         help_text="The month this payment covers. Always set to the 1st of that month."
     )
     notes = models.TextField(blank=True)
+    # Denormalised from resident.hostel — set automatically on create, never by the user directly
+    hostel = models.ForeignKey(
+        Hostel,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="payments",
+    )
     recorded_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,

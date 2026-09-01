@@ -9,6 +9,7 @@ from .models import Payment
 class PaymentSerializer(serializers.ModelSerializer):
     resident_name = serializers.CharField(source="resident.name", read_only=True)
     room_number = serializers.SerializerMethodField(read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
     period_label = serializers.SerializerMethodField(read_only=True)
     recorded_by_name = serializers.SerializerMethodField(read_only=True)
 
@@ -17,13 +18,14 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "resident", "resident_name", "room_number",
+            "hostel", "hostel_name",
             "amount", "date_paid", "payment_method",
             "period_month", "period_label",
             "notes",
             "recorded_by", "recorded_by_name",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "recorded_by", "created_at", "updated_at"]
+        read_only_fields = ["id", "hostel", "recorded_by", "created_at", "updated_at"]
 
     def get_room_number(self, obj):
         return obj.resident.room_number
@@ -40,6 +42,10 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data["recorded_by"] = self.context["request"].user
+        # Auto-populate hostel from the resident — no user input needed
+        resident = validated_data.get("resident")
+        if resident and resident.hostel_id:
+            validated_data["hostel"] = resident.hostel
         return super().create(validated_data)
 
 

@@ -1,0 +1,52 @@
+# ── Node / React Native / Expo ─────────────────────────────────────────────────
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+*.tsbuildinfo
+
+# Native build output
+/mobile/ios/
+/mobile/android/
+*.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# ── Python / Django ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+.venv_check/
+venv/
+env/
+*.env
+*.sqlite3
+media/
+
+# ── IDE / OS ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.pem
+.env*.local
+
+# ── Docker ─────────────────────────────────────────────────────────────────────
+*.log

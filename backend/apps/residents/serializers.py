@@ -8,11 +8,13 @@ class ResidentListSerializer(serializers.ModelSerializer):
     room_number = serializers.SerializerMethodField()
     sharing_type_name = serializers.SerializerMethodField()
     monthly_fee = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
 
     class Meta:
         model = Resident
         fields = [
             "id", "name", "phone", "parent_name", "parent_phone",
+            "hostel", "hostel_name",
             "room_number", "sharing_type_name", "monthly_fee",
             "check_in_date", "check_out_date", "status",
             "created_at",
@@ -32,12 +34,14 @@ class ResidentDetailSerializer(serializers.ModelSerializer):
     sharing_type_name = serializers.SerializerMethodField(read_only=True)
     monthly_fee = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     bed_label = serializers.SerializerMethodField(read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
 
     class Meta:
         model = Resident
         fields = [
             "id", "name", "phone", "parent_name", "parent_phone",
             "id_proof",
+            "hostel", "hostel_name",
             "bed", "bed_label", "room_number", "sharing_type_name", "monthly_fee",
             "check_in_date", "check_out_date", "status",
             "notes",

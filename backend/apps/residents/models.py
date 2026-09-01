@@ -1,5 +1,6 @@
 from django.db import models
 from apps.rooms.models import Bed
+from apps.hostels.models import Hostel
 
 
 class Resident(models.Model):
@@ -18,13 +19,22 @@ class Resident(models.Model):
     parent_phone = models.CharField(max_length=15, blank=True)
     id_proof = models.FileField(upload_to="id_proofs/", blank=True, null=True)
 
-    # Room assignment
+    # Room assignment (optional)
     bed = models.OneToOneField(
         Bed,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="resident",
+    )
+
+    # Hostel assignment
+    hostel = models.ForeignKey(
+        Hostel,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="residents",
     )
 
     # Stay dates

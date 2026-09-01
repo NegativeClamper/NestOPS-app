@@ -1,4 +1,5 @@
 from django.db import models
+from apps.hostels.models import Hostel
 
 
 class ExpenseCategory(models.Model):
@@ -31,6 +32,13 @@ class Expense(models.Model):
     date = models.DateField()
     description = models.CharField(max_length=500)
     receipt = models.FileField(upload_to="receipts/", blank=True, null=True)
+    hostel = models.ForeignKey(
+        Hostel,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="expenses",
+    )
     recorded_by = models.ForeignKey(
         "accounts.User",
         on_delete=models.SET_NULL,
