@@ -6,26 +6,42 @@ import django_filters
 
 from apps.accounts.permissions import IsOwner, IsOwnerOrStaff
 from .models import Resident
-from .serializers import ResidentListSerializer, ResidentDetailSerializer, CheckOutSerializer
+from .serializers import (
+    ResidentListSerializer, ResidentDetailSerializer,
+    CheckOutSerializer, CurrentCycleSerializer,
+)
 
 
 class ResidentFilter(django_filters.FilterSet):
-    name = django_filters.CharFilter(lookup_expr="icontains")
-    room = django_filters.CharFilter(field_name="bed__room__room_number", lookup_expr="iexact")
+    name   = django_filters.CharFilter(lookup_expr="icontains")
+    room   = django_filters.CharFilter(field_name="bed__room__room_number", lookup_expr="iexact")
     status = django_filters.ChoiceFilter(choices=Resident.Status.choices)
+    hostel = django_filters.NumberFilter(field_name="hostel__id")
 
     class Meta:
         model = Resident
-        fields = ["name", "room", "status"]
+        fields = ["name", "room", "status", "hostel"]
 
 
 class ResidentViewSet(viewsets.ModelViewSet):
     """
-    CRUD for residents. Supports search by name and filter by room/status.
+    CRUD for residents.
+
+    Endpoints:
+      GET  /api/residents/                    — list with embedded current_cycle per resident
+      GET  /api/residents/{id}/               — detail with embedded current_cycle
+      POST /api/residents/                    — create
+      PATCH/PUT /api/residents/{id}/          — update
+      DELETE /api/residents/{id}/             — owner-only
+      POST /api/residents/{id}/checkout/      — mark checked-out, free bed
+      GET  /api/residents/{id}/cycle_status/  — current cycle status only (lightweight poll)
+
+    Filter params: name, room, status, hostel
     """
     queryset = (
-        Resident.objects.select_related("bed", "bed__room", "bed__room__sharing_type")
-        .all()
+        Resident.objects.select_related(
+            "bed", "bed__room", "bed__room__sharing_type", "hostel"
+        ).all()
     )
     permission_classes = [IsOwnerOrStaff]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -43,6 +59,41 @@ class ResidentViewSet(viewsets.ModelViewSet):
         if self.action == "destroy":
             return [IsOwner()]
         return [IsOwnerOrStaff()]
+
+    # ── custom actions ────────────────────────────────────────────────────────
+
+    @action(detail=True, methods=["get"], url_path="cycle_status")
+    def cycle_status(self, request, pk=None):
+        """
+        GET /api/residents/{id}/cycle_status/
+
+        Returns the resident's current billing cycle status without any other
+        resident fields.  Useful for lightweight polling or a payment screen
+        that only needs to know if the current cycle is paid.
+
+        Response shape:
+          {
+            "resident_id":   int,
+            "resident_name": str,
+            "hostel_name":   str | null,
+            "monthly_fee":   str | null,   (Decimal as string)
+            "cycle_status":  { cycle_start, cycle_due_date, amount_due,
+                               amount_paid, balance, is_paid, is_overdue }
+          }
+        """
+        resident = self.get_object()
+        cycle = resident.current_cycle_status()
+        return Response({
+            "resident_id":   resident.id,
+            "resident_name": resident.name,
+            "hostel_name":   resident.hostel.name if resident.hostel_id else None,
+            "monthly_fee":   str(resident.monthly_fee) if resident.monthly_fee is not None else None,
+            "cycle_status":  CurrentCycleSerializer(cycle).data if cycle else {
+                "cycle_start": None, "cycle_due_date": None,
+                "amount_due": None, "amount_paid": None, "balance": None,
+                "is_paid": None, "is_overdue": None,
+            },
+        })
 
     @action(detail=True, methods=["post"], url_path="checkout")
     def checkout(self, request, pk=None):
