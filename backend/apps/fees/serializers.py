@@ -52,6 +52,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 class DueMonthSerializer(serializers.Serializer):
     period_month = serializers.DateField()
     period_label = serializers.CharField()
+    cycle_due_date = serializers.DateField()
     amount_due = serializers.DecimalField(max_digits=10, decimal_places=2)
     amount_paid = serializers.DecimalField(max_digits=10, decimal_places=2)
     balance = serializers.DecimalField(max_digits=10, decimal_places=2)

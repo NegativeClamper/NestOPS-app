@@ -70,6 +70,34 @@ class Resident(models.Model):
 
     @property
     def monthly_fee(self):
+        """
+        The resident's monthly rate.
+        Prefers hostel.monthly_rate (new model) over the legacy bed/sharing_type rate.
+        """
+        if self.hostel_id:
+            return self.hostel.monthly_rate
         if self.bed and self.bed.room.sharing_type:
             return self.bed.room.sharing_type.monthly_rate
         return None
+
+    def current_cycle_status(self, today=None) -> dict | None:
+        """
+        Returns the resident's current billing cycle status:
+          {
+            "cycle_start":    date,     # first day of the active cycle
+            "cycle_due_date": date,     # day payment is due (= start of next cycle)
+            "amount_due":     Decimal,
+            "amount_paid":    Decimal,
+            "balance":        Decimal,
+            "is_paid":        bool,
+            "is_overdue":     bool,     # due date has passed and balance > 0
+          }
+
+        Returns None if the rate cannot be determined (no hostel, no bed rate).
+
+        Uses a lazy import from fees.utils to avoid a circular import
+        (fees.utils imports Resident, so Resident cannot import fees.utils at
+        module level).
+        """
+        from apps.fees.utils import cycle_status_for_resident  # lazy / circular-safe
+        return cycle_status_for_resident(self, today)

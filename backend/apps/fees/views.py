@@ -31,7 +31,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
     """
     queryset = (
         Payment.objects.select_related(
-            "resident", "resident__bed", "resident__bed__room", "recorded_by"
+            "resident", "resident__bed", "resident__bed__room",
+            "resident__hostel", "recorded_by"
         ).all()
     )
     serializer_class = PaymentSerializer
@@ -65,19 +66,31 @@ class PaymentViewSet(viewsets.ModelViewSet):
     def resident_dues(self, request, resident_id=None):
         """
         GET /api/fees/resident/{id}/dues/ — due breakdown for a specific resident.
+        Includes a `current_cycle` block with the join-date-anchored status.
         """
         try:
             resident = Resident.objects.select_related(
-                "bed", "bed__room", "bed__room__sharing_type"
+                "bed", "bed__room", "bed__room__sharing_type", "hostel"
             ).get(pk=resident_id)
         except Resident.DoesNotExist:
             return Response({"detail": "Resident not found."}, status=status.HTTP_404_NOT_FOUND)
 
         dues = compute_dues_for_resident(resident)
         serializer = DueMonthSerializer(dues, many=True)
+        cycle = resident.current_cycle_status()
         return Response({
-            "resident_id": resident.id,
-            "resident_name": resident.name,
-            "monthly_fee": str(resident.monthly_fee or 0),
+            "resident_id":    resident.id,
+            "resident_name":  resident.name,
+            "monthly_fee":    str(resident.monthly_fee or 0),
+            "current_cycle":  {
+                "cycle_start":    cycle["cycle_start"].isoformat() if cycle else None,
+                "cycle_due_date": cycle["cycle_due_date"].isoformat() if cycle else None,
+                "amount_due":     str(cycle["amount_due"]) if cycle else None,
+                "amount_paid":    str(cycle["amount_paid"]) if cycle else None,
+                "balance":        str(cycle["balance"]) if cycle else None,
+                "is_paid":        cycle["is_paid"] if cycle else None,
+                "is_overdue":     cycle["is_overdue"] if cycle else None,
+            },
             "dues": serializer.data,
         })
+
