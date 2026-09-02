@@ -17,8 +17,9 @@ export interface Payment {
 }
 
 export interface DueMonth {
-  period_month: string;
-  period_label: string;
+  period_month: string;      // cycle start date e.g. "2025-08-12"
+  period_label: string;      // e.g. "12 Aug 2025 cycle"
+  cycle_due_date: string;    // due date e.g. "2025-09-12"
   amount_due: string;
   amount_paid: string;
   balance: string;
@@ -58,7 +59,12 @@ export const feesApi = {
     amount: string;
     date_paid: string;
     payment_method: string;
-    period_month: string;
+    // Either send period_month (exact cycle-start date) or cycle_year+cycle_month
+    // (server will compute the anchored cycle-start). If neither is sent,
+    // the server defaults to the current cycle.
+    period_month?: string;
+    cycle_year?: number;
+    cycle_month?: number;
     notes?: string;
   }): Promise<Payment> => {
     const response = await apiClient.post<Payment>('/fees/', data);
