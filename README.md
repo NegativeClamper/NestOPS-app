@@ -50,7 +50,7 @@ API Docs (Swagger): `http://localhost:8000/api/docs/`
 ```bash
 cd mobile
 
-# Install dependencies (already done if you ran npm install)
+# Install dependences (already done if you ran npm install)
 npm install
 
 # Set your backend URL
