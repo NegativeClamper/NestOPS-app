@@ -34,6 +34,8 @@ from decimal import Decimal
 from collections import defaultdict
 import calendar
 
+from django.db.models import Sum
+
 from apps.residents.models import Resident
 from .models import Payment
 
@@ -157,7 +159,7 @@ def cycle_status_for_resident(resident: Resident, today: date = None) -> dict | 
     paid_total = Payment.objects.filter(
         resident=resident,
         period_month=cycle_start,
-    ).aggregate(total=models_Sum("amount"))["total"] or Decimal("0")
+    ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
 
     balance = monthly_rate - paid_total
 
@@ -263,7 +265,3 @@ def compute_all_dues(today: date = None) -> list[dict]:
     result.sort(key=lambda x: x["overdue_months_count"], reverse=True)
     return result
 
-
-# ─── Lazy import to avoid circular deps ──────────────────────────────────────
-# Django's aggregation import done here to keep module-level imports clean.
-from django.db.models import Sum as models_Sum  # noqa: E402

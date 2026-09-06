@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
@@ -48,8 +49,27 @@ export default function DashboardScreen({ navigation }: any) {
   }
 
   if (error || !data) {
+    // Distinguish network failure from a real HTTP error so it's self-explanatory
+    // without being a wall of raw JSON for end users.
+    let errorMessage = 'Failed to load dashboard. Check your connection.';
+    if (error) {
+      const axiosError = error as any;
+      if (axiosError.response) {
+        // Server responded — this is NOT a connection problem
+        const status: number = axiosError.response.status;
+        const detail: string =
+          axiosError.response.data?.detail ||
+          axiosError.response.data?.error ||
+          JSON.stringify(axiosError.response.data)?.slice(0, 120) ||
+          'Unknown server error';
+        errorMessage = `Server error ${status}: ${detail}`;
+      } else if (axiosError.request) {
+        // Request made but no response — genuine network/timeout issue
+        errorMessage = 'Could not reach the server. Check that the backend is running and your device is on the same network.';
+      }
+    }
     return (
-      <ScreenContainer error="Failed to load dashboard. Check your connection." />
+      <ScreenContainer error={errorMessage} />
     );
   }
 
