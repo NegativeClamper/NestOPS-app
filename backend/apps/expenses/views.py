@@ -38,10 +38,11 @@ class ExpenseFilter(django_filters.FilterSet):
     date_to = django_filters.DateFilter(field_name="date", lookup_expr="lte")
     month = django_filters.NumberFilter(field_name="date__month")
     year = django_filters.NumberFilter(field_name="date__year")
+    hostel = django_filters.NumberFilter(field_name="hostel__id")
 
     class Meta:
         model = Expense
-        fields = ["category", "date_from", "date_to", "month", "year"]
+        fields = ["category", "date_from", "date_to", "month", "year", "hostel"]
 
 
 class ExpenseViewSet(viewsets.ModelViewSet):
@@ -67,18 +68,22 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="summary")
     def summary(self, request):
         """
-        GET /api/expenses/summary/?year=2025&month=8 — monthly totals by category.
-        If month/year not provided, defaults to current month.
+        GET /api/expenses/summary/?year=2025&month=8&hostel=<id>
+        Monthly totals by category, optionally scoped to a hostel.
         """
         today = date.today()
         year = int(request.query_params.get("year", today.year))
         month = int(request.query_params.get("month", today.month))
+        hostel_id = request.query_params.get("hostel")
 
-        expenses = Expense.objects.filter(date__year=year, date__month=month).select_related("category")
-        total = expenses.aggregate(t=Sum("amount"))["t"] or Decimal("0")
+        qs = Expense.objects.filter(date__year=year, date__month=month).select_related("category")
+        if hostel_id:
+            qs = qs.filter(hostel_id=hostel_id)
+
+        total = qs.aggregate(t=Sum("amount"))["t"] or Decimal("0")
 
         by_category = {}
-        for exp in expenses:
+        for exp in qs:
             key = exp.category.name
             by_category[key] = by_category.get(key, Decimal("0")) + exp.amount
 

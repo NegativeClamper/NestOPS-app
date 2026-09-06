@@ -19,10 +19,11 @@ class PaymentFilter(django_filters.FilterSet):
     period_year = django_filters.NumberFilter(field_name="period_month__year")
     period_month_num = django_filters.NumberFilter(field_name="period_month__month")
     payment_method = django_filters.ChoiceFilter(choices=Payment.Method.choices)
+    hostel = django_filters.NumberFilter(field_name="hostel__id")
 
     class Meta:
         model = Payment
-        fields = ["resident", "period_month", "payment_method"]
+        fields = ["resident", "period_month", "payment_method", "hostel"]
 
 
 class PaymentViewSet(viewsets.ModelViewSet):

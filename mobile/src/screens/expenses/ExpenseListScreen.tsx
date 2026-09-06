@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { expensesApi, Expense } from '../../api/expenses';
+import { hostelsApi } from '../../api/hostels';
 import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
+import { HostelSwitcherBar } from '../../components/HostelSwitcherBar';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { formatDate, formatCurrency } from '../../utils/formatters';
 import { useAuthStore } from '../../store/authStore';
+import { useHostelStore } from '../../store/hostelStore';
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -23,20 +26,32 @@ const MONTHS = [
 export default function ExpenseListScreen({ navigation }: any) {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const { selectedHostelId, setSelectedHostel, loadPersistedHostel, isLoaded } = useHostelStore();
+
+  useEffect(() => {
+    if (!isLoaded) loadPersistedHostel();
+  }, []);
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
+  });
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1); // 1-indexed
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['expenses', year, month],
-    queryFn: () => expensesApi.list({ year, month }),
+    queryKey: ['expenses', year, month, selectedHostelId],
+    queryFn: () => expensesApi.list({ year, month, hostel: selectedHostelId ?? undefined }),
     placeholderData: (prev) => prev,
+    enabled: isLoaded,
   });
 
   const { data: summaryData } = useQuery({
-    queryKey: ['expense-summary', year, month],
-    queryFn: () => expensesApi.getSummary(year, month),
+    queryKey: ['expense-summary', year, month, selectedHostelId],
+    queryFn: () => expensesApi.getSummary(year, month, selectedHostelId ?? undefined),
+    enabled: isLoaded,
   });
 
   const deleteMutation = useMutation({
@@ -94,6 +109,13 @@ export default function ExpenseListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
+      {/* Hostel switcher */}
+      <HostelSwitcherBar
+        hostels={hostels}
+        selectedId={selectedHostelId}
+        onSelect={setSelectedHostel}
+      />
+
       {/* Month navigator */}
       <View style={styles.monthNav}>
         <TouchableOpacity onPress={prevMonth} style={styles.navArrow}>

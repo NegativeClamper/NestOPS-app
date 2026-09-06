@@ -230,17 +230,19 @@ def compute_dues_for_resident(resident: Resident, today: date = None) -> list[di
     return dues
 
 
-def compute_all_dues(today: date = None) -> list[dict]:
+def compute_all_dues(today: date = None, hostel_id: int = None) -> list[dict]:
     """
     Returns due summaries for ALL active residents with outstanding balances.
+    Pass hostel_id to restrict to a single hostel.
     Sorted by overdue cycle count descending.
     """
     if today is None:
         today = date.today()
 
-    active_residents = Resident.objects.filter(
-        status=Resident.Status.ACTIVE
-    ).select_related("bed", "bed__room", "bed__room__sharing_type", "hostel")
+    qs = Resident.objects.filter(status=Resident.Status.ACTIVE)
+    if hostel_id:
+        qs = qs.filter(hostel_id=hostel_id)
+    active_residents = qs.select_related("bed", "bed__room", "bed__room__sharing_type", "hostel")
 
     result = []
     for resident in active_residents:

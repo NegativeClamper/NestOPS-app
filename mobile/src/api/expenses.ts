@@ -42,6 +42,7 @@ export const expensesApi = {
     date_to?: string;
     month?: number;
     year?: number;
+    hostel?: number;
     page?: number;
   }) => {
     const response = await apiClient.get('/expenses/', { params });
@@ -64,9 +65,9 @@ export const expensesApi = {
     await apiClient.delete(`/expenses/${id}/`);
   },
 
-  getSummary: async (year?: number, month?: number) => {
+  getSummary: async (year?: number, month?: number, hostel?: number) => {
     const response = await apiClient.get('/expenses/summary/', {
-      params: { year, month },
+      params: { year, month, hostel },
     });
     return response.data;
   },

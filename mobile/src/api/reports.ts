@@ -40,8 +40,9 @@ export interface DashboardData {
 }
 
 export const reportsApi = {
-  getDashboard: async (): Promise<DashboardData> => {
-    const response = await apiClient.get<DashboardData>('/reports/dashboard/');
+  getDashboard: async (hostelId?: number | null): Promise<DashboardData> => {
+    const params = hostelId ? { hostel: hostelId } : {};
+    const response = await apiClient.get<DashboardData>('/reports/dashboard/', { params });
     return response.data;
   },
 };

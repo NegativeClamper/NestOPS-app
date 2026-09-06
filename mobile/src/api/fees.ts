@@ -43,6 +43,7 @@ export const feesApi = {
     resident?: number;
     period_month?: string;
     payment_method?: string;
+    hostel?: number;
     page?: number;
   }) => {
     const response = await apiClient.get('/fees/', { params });

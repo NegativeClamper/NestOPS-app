@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,24 +10,39 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { residentsApi, ResidentListItem } from '../../api/residents';
+import { hostelsApi } from '../../api/hostels';
 import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
+import { HostelSwitcherBar } from '../../components/HostelSwitcherBar';
 import { Badge } from '../../components/Card';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
+import { useHostelStore } from '../../store/hostelStore';
 
 type Status = 'active' | 'checked_out' | '';
 
 export default function ResidentListScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<Status>('active');
+  const { selectedHostelId, setSelectedHostel, loadPersistedHostel, isLoaded } = useHostelStore();
+
+  useEffect(() => {
+    if (!isLoaded) loadPersistedHostel();
+  }, []);
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
+  });
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ['residents', search, statusFilter],
+    queryKey: ['residents', search, statusFilter, selectedHostelId],
     queryFn: () =>
       residentsApi.list({
         search: search || undefined,
         status: statusFilter || undefined,
+        hostel: selectedHostelId ?? undefined,
       }),
     placeholderData: (prev) => prev,
+    enabled: isLoaded,
   });
 
   const residents: ResidentListItem[] = data?.results || data || [];
@@ -64,6 +79,13 @@ export default function ResidentListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
+      {/* Hostel switcher */}
+      <HostelSwitcherBar
+        hostels={hostels}
+        selectedId={selectedHostelId}
+        onSelect={setSelectedHostel}
+      />
+
       {/* Search + Filter bar */}
       <View style={styles.filterBar}>
         <TextInput

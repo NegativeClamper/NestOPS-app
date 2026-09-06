@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
 import { useQuery } from '@tanstack/react-query';
 
 import { reportsApi } from '../../api/reports';
+import { hostelsApi } from '../../api/hostels';
 import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
 import { Card, StatCard, Badge } from '../../components/Card';
+import { HostelSwitcherBar } from '../../components/HostelSwitcherBar';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { formatCurrency } from '../../utils/formatters';
+import { useHostelStore } from '../../store/hostelStore';
 
 // ── Pure-RN bar chart (no external charting library) ─────────────────────────
 function SimpleBarChart({ data }: { data: Array<{ month_label: string; revenue: number; expenses: number }> }) {
@@ -38,13 +41,26 @@ function SimpleBarChart({ data }: { data: Array<{ month_label: string; revenue: 
 }
 
 export default function DashboardScreen({ navigation }: any) {
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: reportsApi.getDashboard,
-    refetchInterval: 60000, // auto-refresh every minute
+  const { selectedHostelId, setSelectedHostel, loadPersistedHostel, isLoaded } = useHostelStore();
+
+  // Load persisted hostel selection on first mount
+  useEffect(() => {
+    if (!isLoaded) loadPersistedHostel();
+  }, []);
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
   });
 
-  if (isLoading) {
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
+    queryKey: ['dashboard', selectedHostelId],
+    queryFn: () => reportsApi.getDashboard(selectedHostelId),
+    refetchInterval: 60000,
+    enabled: isLoaded, // wait until persisted selection is loaded
+  });
+
+  if (isLoading || !isLoaded) {
     return <ScreenContainer loading />;
   }
 
@@ -55,7 +71,6 @@ export default function DashboardScreen({ navigation }: any) {
     if (error) {
       const axiosError = error as any;
       if (axiosError.response) {
-        // Server responded — this is NOT a connection problem
         const status: number = axiosError.response.status;
         const detail: string =
           axiosError.response.data?.detail ||
@@ -64,7 +79,6 @@ export default function DashboardScreen({ navigation }: any) {
           'Unknown server error';
         errorMessage = `Server error ${status}: ${detail}`;
       } else if (axiosError.request) {
-        // Request made but no response — genuine network/timeout issue
         errorMessage = 'Could not reach the server. Check that the backend is running and your device is on the same network.';
       }
     }
@@ -86,6 +100,14 @@ export default function DashboardScreen({ navigation }: any) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} />}
     >
+      {/* Hostel switcher */}
+      <HostelSwitcherBar
+        hostels={hostels}
+        selectedId={selectedHostelId}
+        onSelect={setSelectedHostel}
+        allowAll
+      />
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.greeting}>Dashboard</Text>
@@ -93,7 +115,6 @@ export default function DashboardScreen({ navigation }: any) {
           {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
         </Text>
       </View>
-
 
       {/* Revenue / Expense / P&L */}
       <View style={styles.row}>

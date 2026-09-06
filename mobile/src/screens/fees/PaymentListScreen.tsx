@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { feesApi, Payment } from '../../api/fees';
+import { hostelsApi } from '../../api/hostels';
 import { ScreenContainer, EmptyState } from '../../components/ScreenContainer';
+import { HostelSwitcherBar } from '../../components/HostelSwitcherBar';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
 import { formatDate, formatCurrency, paymentMethodLabel } from '../../utils/formatters';
 import { useAuthStore } from '../../store/authStore';
+import { useHostelStore } from '../../store/hostelStore';
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -30,6 +33,16 @@ const METHOD_COLORS: Record<string, string> = {
 export default function PaymentListScreen({ navigation }: any) {
   const queryClient = useQueryClient();
   const user = useAuthStore((s) => s.user);
+  const { selectedHostelId, setSelectedHostel, loadPersistedHostel, isLoaded } = useHostelStore();
+
+  useEffect(() => {
+    if (!isLoaded) loadPersistedHostel();
+  }, []);
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
+  });
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -38,9 +51,13 @@ export default function PaymentListScreen({ navigation }: any) {
   const periodMonth = `${year}-${String(month).padStart(2, '0')}-01`;
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ['payments', year, month],
-    queryFn: () => feesApi.listPayments({ period_month: periodMonth }),
+    queryKey: ['payments', year, month, selectedHostelId],
+    queryFn: () => feesApi.listPayments({
+      period_month: periodMonth,
+      hostel: selectedHostelId ?? undefined,
+    }),
     placeholderData: (prev) => prev,
+    enabled: isLoaded,
   });
 
   const deleteMutation = useMutation({
@@ -107,6 +124,13 @@ export default function PaymentListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
+      {/* Hostel switcher */}
+      <HostelSwitcherBar
+        hostels={hostels}
+        selectedId={selectedHostelId}
+        onSelect={setSelectedHostel}
+      />
+
       {/* Month nav */}
       <View style={styles.monthNav}>
         <TouchableOpacity onPress={prevMonth} style={styles.navArrow}>
