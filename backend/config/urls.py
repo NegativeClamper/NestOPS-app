@@ -17,6 +17,9 @@ urlpatterns = [
     path("api/fees/", include("apps.fees.urls")),
     path("api/expenses/", include("apps.expenses.urls")),
     path("api/reports/", include("apps.reports.urls")),
+    # Intake form — HTML page + public API
+    path("intake/", include("apps.intake.urls")),
+    path("api/intake/", include("apps.intake.api_urls")),
 ]
 
 if settings.DEBUG:

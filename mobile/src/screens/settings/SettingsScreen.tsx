@@ -8,10 +8,14 @@ import {
   Alert,
   Modal,
   TextInput,
+  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { roomsApi, SharingType } from '../../api/rooms';
 import { authApi } from '../../api/auth';
+import { hostelsApi, Hostel } from '../../api/hostels';
+import { intakeApi } from '../../api/intake';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
@@ -180,6 +184,60 @@ function AddStaffModal({ visible, onClose, onSaved }: { visible: boolean; onClos
   );
 }
 
+// ─── QR Code Modal ────────────────────────────────────────────────────────────
+function QrModal({ hostel, visible, onClose }: { hostel: Hostel | null; visible: boolean; onClose: () => void }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  const qrUrl = hostel ? intakeApi.getQrCodeUrl(hostel.id) : null;
+
+  React.useEffect(() => {
+    if (visible) { setImageLoaded(false); setImageError(false); }
+  }, [visible, hostel]);
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={styles.modal}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>{hostel?.name} — QR Code</Text>
+          <TouchableOpacity onPress={onClose}><Text style={styles.modalClose}>✕</Text></TouchableOpacity>
+        </View>
+        <ScrollView contentContainerStyle={styles.modalContent}>
+          <Text style={styles.qrHint}>
+            Print this QR code and post it at the hostel entrance. New residents scan it to register themselves.
+          </Text>
+          <View style={styles.qrImageWrap}>
+            {qrUrl && !imageError ? (
+              <Image
+                source={{ uri: qrUrl }}
+                style={styles.qrImage}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+              />
+            ) : null}
+            {qrUrl && !imageLoaded && !imageError && (
+              <View style={styles.qrPlaceholder}>
+                <ActivityIndicator color={Colors.primary} />
+                <Text style={styles.qrPlaceholderText}>Loading QR…</Text>
+              </View>
+            )}
+            {imageError && (
+              <View style={styles.qrPlaceholder}>
+                <Text style={styles.qrPlaceholderText}>Could not load QR. Check backend connection.</Text>
+              </View>
+            )}
+          </View>
+          {hostel && (
+            <Text style={styles.qrUrl}>
+              Intake URL: /intake/{hostel.id}/
+            </Text>
+          )}
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Main Settings Screen ─────────────────────────────────────────────────────
 export default function SettingsScreen({ navigation }: any) {
   const queryClient = useQueryClient();
@@ -187,6 +245,7 @@ export default function SettingsScreen({ navigation }: any) {
 
   const [sharingTypeModal, setSharingTypeModal] = useState<{ visible: boolean; existing?: SharingType | null }>({ visible: false });
   const [addStaffModal, setAddStaffModal] = useState(false);
+  const [qrModal, setQrModal] = useState<{ visible: boolean; hostel: Hostel | null }>({ visible: false, hostel: null });
 
   const { data: sharingTypes = [] } = useQuery({
     queryKey: ['sharing-types'],
@@ -198,6 +257,18 @@ export default function SettingsScreen({ navigation }: any) {
     queryFn: authApi.getStaff,
     enabled: user?.role === 'owner',
   });
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
+    enabled: user?.role === 'owner',
+  });
+
+  const { data: pendingData } = useQuery({
+    queryKey: ['pending-verification'],
+    queryFn: intakeApi.getPendingVerification,
+  });
+  const pendingCount = pendingData?.count ?? 0;
 
   const deleteSharingType = useMutation({
     mutationFn: roomsApi.deleteSharingType,
@@ -295,6 +366,54 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         )}
 
+        {/* Hostels & QR Codes — Owner only */}
+        {user?.role === 'owner' && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Hostels & QR Codes</Text>
+            </View>
+            <Text style={styles.sectionHint}>Tap "QR Code" to view a printable QR for each hostel's intake form.</Text>
+            {hostels.map((h: Hostel) => (
+              <View key={h.id} style={styles.hostelRow}>
+                <View style={styles.tierInfo}>
+                  <Text style={styles.tierName}>{h.name}</Text>
+                  <Text style={styles.tierDetail}>
+                    {h.gender === 'boys' ? '👨 Boys' : '👩 Girls'} · ₹{Number(h.monthly_rate).toLocaleString('en-IN')}/mo
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.qrBtn}
+                  onPress={() => setQrModal({ visible: true, hostel: h })}
+                >
+                  <Text style={styles.qrBtnText}>QR Code</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Pending Verification */}
+        <TouchableOpacity
+          style={styles.navRow}
+          onPress={() => navigation.navigate('PendingVerification')}
+        >
+          <View style={styles.navRowLeft}>
+            <Text style={styles.navRowIcon}>🔍</Text>
+            <View>
+              <Text style={styles.navRowTitle}>Pending Verification</Text>
+              <Text style={styles.navRowSub}>Review intake payment screenshots</Text>
+            </View>
+          </View>
+          <View style={styles.navRowRight}>
+            {pendingCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{pendingCount}</Text>
+              </View>
+            )}
+            <Text style={styles.navChevron}>›</Text>
+          </View>
+        </TouchableOpacity>
+
         {/* Staff accounts — Owner only */}
         {user?.role === 'owner' && (
           <View style={styles.section}>
@@ -350,6 +469,11 @@ export default function SettingsScreen({ navigation }: any) {
         onClose={() => setAddStaffModal(false)}
         onSaved={() => setAddStaffModal(false)}
       />
+      <QrModal
+        visible={qrModal.visible}
+        hostel={qrModal.hostel}
+        onClose={() => setQrModal({ visible: false, hostel: null })}
+      />
     </ScreenContainer>
   );
 }
@@ -399,6 +523,25 @@ const styles = StyleSheet.create({
   staffUsername: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
   staffPhone: { fontSize: Typography.fontSize.sm, color: Colors.textMuted },
 
+  // Hostel QR rows
+  hostelRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing[3], borderBottomWidth: 1, borderBottomColor: Colors.border },
+  qrBtn: { backgroundColor: Colors.primary, borderRadius: BorderRadius.md, paddingHorizontal: Spacing[3], paddingVertical: Spacing[2] },
+  qrBtnText: { fontSize: Typography.fontSize.sm, color: Colors.white, fontWeight: Typography.fontWeight.semibold },
+
+  // Pending verification nav row
+  navRow: {
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.lg, padding: Spacing[4],
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', ...Shadow.sm,
+  },
+  navRowLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing[3] },
+  navRowIcon: { fontSize: 24 },
+  navRowTitle: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.textPrimary },
+  navRowSub: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  navRowRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing[2] },
+  navChevron: { fontSize: 20, color: Colors.textMuted },
+  badge: { backgroundColor: Colors.danger, borderRadius: 999, minWidth: 22, height: 22, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
+  badgeText: { color: Colors.white, fontSize: 12, fontWeight: Typography.fontWeight.bold },
+
   logoutBtn: { backgroundColor: Colors.dangerLight, borderRadius: BorderRadius.lg, padding: Spacing[4], alignItems: 'center', marginTop: Spacing[4] },
   logoutText: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.danger },
 
@@ -407,7 +550,15 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: Spacing[5], borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface },
   modalTitle: { fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
   modalClose: { fontSize: 22, color: Colors.textSecondary },
-  modalContent: { padding: Spacing[5], gap: Spacing[4] },
+  modalContent: { padding: Spacing[5], gap: Spacing[4], alignItems: 'center' },
   rateNote: { backgroundColor: Colors.infoLight, borderRadius: BorderRadius.md, padding: Spacing[3] },
   rateNoteText: { fontSize: Typography.fontSize.sm, color: Colors.info },
+
+  // QR Modal
+  qrHint: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary, textAlign: 'center', marginBottom: Spacing[4] },
+  qrImageWrap: { width: 260, height: 260, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.white, borderRadius: BorderRadius.lg, ...Shadow.sm, overflow: 'hidden' },
+  qrImage: { width: 260, height: 260 },
+  qrPlaceholder: { alignItems: 'center', justifyContent: 'center', gap: Spacing[2], padding: Spacing[4] },
+  qrPlaceholderText: { fontSize: Typography.fontSize.sm, color: Colors.textMuted, textAlign: 'center' },
+  qrUrl: { fontSize: Typography.fontSize.xs, color: Colors.textMuted, marginTop: Spacing[3], textAlign: 'center' },
 });

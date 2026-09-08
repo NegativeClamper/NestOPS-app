@@ -1,4 +1,8 @@
+import io
+from django.http import HttpResponse
+from django.conf import settings
 from rest_framework import viewsets, filters
+from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
@@ -29,3 +33,21 @@ class HostelViewSet(viewsets.ModelViewSet):
     search_fields = ["name"]
     ordering_fields = ["name", "monthly_rate"]
     ordering = ["name"]
+
+    @action(detail=True, methods=["get"], url_path="qr")
+    def qr_code(self, request, pk=None):
+        """
+        GET /api/hostels/<id>/qr/
+        Returns a PNG QR code image encoding the intake URL for this hostel.
+        """
+        import qrcode
+
+        hostel = self.get_object()
+        base_url = getattr(settings, "INTAKE_BASE_URL", "http://localhost:8000")
+        intake_url = f"{base_url}/intake/{hostel.id}/"
+
+        img = qrcode.make(intake_url)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        buf.seek(0)
+        return HttpResponse(buf.read(), content_type="image/png")

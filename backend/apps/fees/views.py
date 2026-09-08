@@ -95,3 +95,49 @@ class PaymentViewSet(viewsets.ModelViewSet):
             "dues": serializer.data,
         })
 
+    @action(detail=False, methods=["get"], url_path="pending-verification")
+    def pending_verification(self, request):
+        """
+        GET /api/fees/pending-verification/
+        Lists all unverified payments (submitted via intake form, awaiting review).
+        """
+        qs = (
+            Payment.objects.filter(verified=False)
+            .select_related("resident", "resident__hostel", "hostel")
+            .order_by("-created_at")
+        )
+        data = []
+        for p in qs:
+            screenshot_url = None
+            if p.transaction_screenshot and hasattr(p.transaction_screenshot, "url"):
+                try:
+                    screenshot_url = request.build_absolute_uri(p.transaction_screenshot.url)
+                except Exception:
+                    pass
+            data.append({
+                "id":             p.id,
+                "resident_id":    p.resident_id,
+                "resident_name":  p.resident.name,
+                "resident_phone": p.resident.phone,
+                "hostel_name":    p.hostel.name if p.hostel else "",
+                "amount":         str(p.amount),
+                "date_paid":      p.date_paid.isoformat(),
+                "transaction_id": p.transaction_id,
+                "screenshot_url": screenshot_url,
+                "created_at":     p.created_at.isoformat(),
+            })
+        return Response({"count": len(data), "results": data})
+
+    @action(detail=True, methods=["post"], url_path="verify",
+            permission_classes=[IsOwner])
+    def verify(self, request, pk=None):
+        """
+        POST /api/fees/<id>/verify/
+        Marks an intake payment as verified. Owner only.
+        """
+        payment = self.get_object()
+        if payment.verified:
+            return Response({"detail": "Payment is already verified."})
+        payment.verified = True
+        payment.save(update_fields=["verified"])
+        return Response({"detail": "Payment verified.", "id": payment.id})

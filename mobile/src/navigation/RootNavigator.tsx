@@ -30,6 +30,7 @@ import AddExpenseScreen from '../screens/expenses/AddExpenseScreen';
 
 // Settings
 import SettingsScreen from '../screens/settings/SettingsScreen';
+import PendingVerificationScreen from '../screens/fees/PendingVerificationScreen';
 
 // ─── Stacks ──────────────────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator();
@@ -104,6 +105,11 @@ function SettingsStack() {
   return (
     <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+      <Stack.Screen
+        name="PendingVerification"
+        component={PendingVerificationScreen}
+        options={{ title: 'Pending Verification' }}
+      />
     </Stack.Navigator>
   );
 }

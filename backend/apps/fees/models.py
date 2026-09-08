@@ -23,7 +23,18 @@ class Payment(models.Model):
         help_text="The month this payment covers. Always set to the 1st of that month."
     )
     notes = models.TextField(blank=True)
+    # Intake-submitted payment proof
+    transaction_id = models.CharField(max_length=100, blank=True, default="")
+    transaction_screenshot = models.ImageField(
+        upload_to="transaction_screenshots/", blank=True, null=True
+    )
+    # verified=True for payments recorded by staff; False for self-service intake submissions
+    verified = models.BooleanField(
+        default=True,
+        help_text="False = submitted via intake form, awaiting owner review.",
+    )
     # Denormalised from resident.hostel — set automatically on create, never by the user directly
+
     hostel = models.ForeignKey(
         Hostel,
         on_delete=models.PROTECT,

@@ -56,13 +56,16 @@ class PaymentSerializer(serializers.ModelSerializer):
             "period_month", "period_label",
             "cycle_year", "cycle_month",      # write-only helpers
             "notes",
+            "transaction_id", "transaction_screenshot",
+            "verified",
             "recorded_by", "recorded_by_name",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "hostel", "recorded_by", "created_at", "updated_at"]
+        read_only_fields = ["id", "hostel", "recorded_by", "verified", "created_at", "updated_at"]
         extra_kwargs = {
             "period_month": {"required": False},
         }
+
 
     def get_room_number(self, obj):
         return obj.resident.room_number

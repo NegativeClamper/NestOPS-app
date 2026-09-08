@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Register — {{ hostel.name }}</title>
+  <meta name="description" content="Register as a new resident at {{ hostel.name }}. Fill in your details and submit your first payment proof.">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:    #2563EB;
+      --primary-dk: #1D4ED8;
+      --success:    #16A34A;
+      --danger:     #DC2626;
+      --text:       #111827;
+      --muted:      #6B7280;
+      --border:     #D1D5DB;
+      --bg:         #F9FAFB;
+      --surface:    #FFFFFF;
+      --radius:     12px;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      padding: 24px 20px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header-badge {
+      display: inline-block;
+      background: #EFF6FF;
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      letter-spacing: 0.02em;
+    }
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .header p {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── Form fields ─────────────────────────────────────────────── */
+    .field { margin-bottom: 20px; }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    label .req { color: var(--danger); }
+
+    input[type="text"],
+    input[type="tel"] {
+      width: 100%;
+      height: 52px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 0 14px;
+      font-size: 16px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type="text"]:focus,
+    input[type="tel"]:focus {
+      border-color: var(--primary);
+    }
+    input.has-error { border-color: var(--danger) !important; }
+
+    /* Camera / file input — styled as a tappable button */
+    .file-btn-wrap { position: relative; }
+    .file-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 52px;
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      color: var(--muted);
+      background: #fff;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      user-select: none;
+    }
+    .file-btn.selected {
+      border-color: var(--success);
+      background: #F0FDF4;
+      color: var(--success);
+    }
+    .file-btn.has-error { border-color: var(--danger); }
+    .file-btn .icon { font-size: 22px; flex-shrink: 0; }
+    /* The actual <input> is invisible, layered over the button */
+    .file-input {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    /* ── Errors ─────────────────────────────────────────────────── */
+    .err-text {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 5px;
+      display: none;
+    }
+    .err-text.visible { display: block; }
+
+    .banner {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--danger);
+      font-size: 14px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    .banner.visible { display: block; }
+
+    /* ── Submit button ───────────────────────────────────────────── */
+    .submit-btn {
+      width: 100%;
+      height: 56px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, opacity 0.15s;
+      margin-top: 8px;
+    }
+    .submit-btn:hover:not(:disabled) { background: var(--primary-dk); }
+    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 3px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Section divider ─────────────────────────────────────────── */
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      margin-top: 4px;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    /* ── Success screen ──────────────────────────────────────────── */
+    #success-screen {
+      display: none;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--success);
+      margin-bottom: 10px;
+    }
+    .success-body {
+      font-size: 16px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      padding-bottom: 24px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <div class="card">
+
+      <!-- ── Header ────────────────────────────────────────────── -->
+      <div class="header">
+        <div class="header-badge">🏠 Hostel Registration</div>
+        <h1>{{ hostel.name }}</h1>
+        <p>Fill in your details below to register as a new resident.</p>
+      </div>
+
+      <!-- ── Success screen (shown after submit) ────────────────── -->
+      <div id="success-screen">
+        <div class="success-icon">✅</div>
+        <p class="success-title">You're all set!</p>
+        <p class="success-body">
+          Your registration has been submitted.<br>
+          The hostel owner will confirm your payment shortly.
+        </p>
+      </div>
+
+      <!-- ── Error banner (server-side or duplicate) ────────────── -->
+      <div id="error-banner" class="banner" role="alert"></div>
+
+      <!-- ── Form ──────────────────────────────────────────────── -->
+      <form id="intake-form" novalidate>
+
+        <!-- Personal details -->
+        <div class="field">
+          <label for="name">Full Name <span class="req">*</span></label>
+          <input id="name" name="name" type="text" placeholder="e.g. Ramesh Kumar" autocomplete="name">
+          <p class="err-text" id="err-name"></p>
+        </div>
+
+        <div class="field">
+          <label for="phone">Your Phone Number <span class="req">*</span></label>
+          <input id="phone" name="phone" type="tel" placeholder="10-digit mobile number" autocomplete="tel" inputmode="numeric">
+          <p class="err-text" id="err-phone"></p>
+        </div>
+
+        <!-- Aadhar -->
+        <div class="field">
+          <label>Aadhar Card Photo <span class="req">*</span></label>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+            Take a clear photo of your Aadhar card (front side).
+          </p>
+          <div class="file-btn-wrap">
+            <div class="file-btn" id="aadhar-btn">
+              <span class="icon">📷</span>
+              <span id="aadhar-label">Tap to take photo</span>
+            </div>
+            <input class="file-input" type="file" id="aadhar_photo" name="aadhar_photo"
+                   accept="image/*" capture="environment">
+          </div>
+          <p class="err-text" id="err-aadhar_photo"></p>
+        </div>
+
+        <!-- Parent/guardian -->
+        <p class="section-label">Parent / Guardian Details</p>
+
+        <div class="field">
+          <label for="parent_name">Parent / Guardian Name <span class="req">*</span></label>
+          <input id="parent_name" name="parent_name" type="text" placeholder="e.g. Suresh Kumar" autocomplete="off">
+          <p class="err-text" id="err-parent_name"></p>
+        </div>
+
+        <div class="field">
+          <label for="parent_phone">Parent / Guardian Phone <span class="req">*</span></label>
+          <input id="parent_phone" name="parent_phone" type="tel" placeholder="10-digit mobile number" autocomplete="off" inputmode="numeric">
+          <p class="err-text" id="err-parent_phone"></p>
+        </div>
+
+        <!-- First payment -->
+        <p class="section-label">First Month Payment Proof</p>
+
+        <div class="field">
+          <label for="transaction_id">Transaction ID / UTR Number <span class="req">*</span></label>
+          <input id="transaction_id" name="transaction_id" type="text"
+                 placeholder="e.g. 123456789012" autocomplete="off" inputmode="numeric">
+          <p class="err-text" id="err-transaction_id"></p>
+        </div>
+
+        <div class="field">
+          <label>Payment Screenshot <span class="req">*</span></label>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:8px;">
+            Take a screenshot or photo of your payment confirmation.
+          </p>
+          <div class="file-btn-wrap">
+            <div class="file-btn" id="txn-btn">
+              <span class="icon">📸</span>
+              <span id="txn-label">Tap to take photo</span>
+            </div>
+            <input class="file-input" type="file" id="transaction_screenshot" name="transaction_screenshot"
+                   accept="image/*" capture="environment">
+          </div>
+          <p class="err-text" id="err-transaction_screenshot"></p>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          Submit Registration
+        </button>
+
+      </form>
+    </div>
+
+    <p class="footer">
+      Powered by HostelHQ &nbsp;·&nbsp; Your information is securely stored.
+    </p>
+  </div>
+
+  <script>
+    const SUBMIT_URL = "/api/intake/{{ hostel.id }}/submit/";
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+    // ── File input display ──────────────────────────────────────
+    function setupFileInput(inputId, btnId, labelId) {
+      const input = document.getElementById(inputId);
+      const btn   = document.getElementById(btnId);
+      const lbl   = document.getElementById(labelId);
+      input.addEventListener("change", () => {
+        const f = input.files[0];
+        if (f) {
+          lbl.textContent = f.name;
+          btn.classList.add("selected");
+          btn.classList.remove("has-error");
+          clearErr(inputId);
+        } else {
+          lbl.textContent = "Tap to take photo";
+          btn.classList.remove("selected");
+        }
+      });
+    }
+    setupFileInput("aadhar_photo",          "aadhar-btn", "aadhar-label");
+    setupFileInput("transaction_screenshot", "txn-btn",   "txn-label");
+
+    // ── Inline error helpers ────────────────────────────────────
+    function showErr(fieldName, msg) {
+      const el = document.getElementById("err-" + fieldName);
+      if (el) { el.textContent = msg; el.classList.add("visible"); }
+      const inp = document.getElementById(fieldName);
+      if (inp) inp.classList.add("has-error");
+      // File button
+      const btn = document.getElementById(
+        fieldName === "aadhar_photo" ? "aadhar-btn" : "txn-btn"
+      );
+      if (btn && (fieldName === "aadhar_photo" || fieldName === "transaction_screenshot")) {
+        btn.classList.add("has-error");
+      }
+    }
+    function clearErr(fieldName) {
+      const el = document.getElementById("err-" + fieldName);
+      if (el) { el.textContent = ""; el.classList.remove("visible"); }
+      const inp = document.getElementById(fieldName);
+      if (inp) inp.classList.remove("has-error");
+    }
+    function clearAllErrors() {
+      document.querySelectorAll(".err-text").forEach(e => {
+        e.textContent = ""; e.classList.remove("visible");
+      });
+      document.querySelectorAll(".has-error").forEach(e => e.classList.remove("has-error"));
+    }
+    function showBanner(msg) {
+      const b = document.getElementById("error-banner");
+      b.textContent = msg;
+      b.classList.add("visible");
+      b.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+    function hideBanner() {
+      const b = document.getElementById("error-banner");
+      b.textContent = "";
+      b.classList.remove("visible");
+    }
+
+    // ── Client-side validation ──────────────────────────────────
+    function validate() {
+      clearAllErrors();
+      hideBanner();
+      let ok = true;
+
+      const name   = document.getElementById("name").value.trim();
+      const phone  = document.getElementById("phone").value.trim();
+      const pName  = document.getElementById("parent_name").value.trim();
+      const pPhone = document.getElementById("parent_phone").value.trim();
+      const txnId  = document.getElementById("transaction_id").value.trim();
+      const aadhar = document.getElementById("aadhar_photo").files[0];
+      const txnSS  = document.getElementById("transaction_screenshot").files[0];
+
+      if (!name)   { showErr("name",  "Full name is required."); ok = false; }
+      if (!phone)  { showErr("phone", "Phone number is required."); ok = false; }
+      if (!pName)  { showErr("parent_name",  "Parent/guardian name is required."); ok = false; }
+      if (!pPhone) { showErr("parent_phone", "Parent/guardian phone is required."); ok = false; }
+      if (!txnId)  { showErr("transaction_id", "Transaction ID is required."); ok = false; }
+
+      if (!aadhar) {
+        showErr("aadhar_photo", "Please take a photo of your Aadhar card."); ok = false;
+      } else if (aadhar.size > MAX_BYTES) {
+        showErr("aadhar_photo", "Photo must be smaller than 5 MB."); ok = false;
+      }
+      if (!txnSS) {
+        showErr("transaction_screenshot", "Please take a screenshot of the payment."); ok = false;
+      } else if (txnSS.size > MAX_BYTES) {
+        showErr("transaction_screenshot", "Screenshot must be smaller than 5 MB."); ok = false;
+      }
+
+      return ok;
+    }
+
+    // ── Submit ──────────────────────────────────────────────────
+    const form      = document.getElementById("intake-form");
+    const submitBtn = document.getElementById("submit-btn");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!validate()) return;
+
+      // Disable button immediately — prevents double-tap
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="spinner"></div> Submitting…';
+
+      const fd = new FormData(form);
+
+      try {
+        const resp = await fetch(SUBMIT_URL, {
+          method: "POST",
+          body: fd,
+        });
+
+        const json = await resp.json();
+
+        if (resp.status === 201) {
+          // ── Success ──────────────────────────────────────────
+          form.style.display = "none";
+          document.getElementById("error-banner").style.display = "none";
+          document.getElementById("success-screen").style.display = "block";
+          window.scrollTo({ top: 0, behavior: "smooth" });
+
+        } else if (resp.status === 409) {
+          // ── Duplicate ─────────────────────────────────────────
+          showBanner(json.detail || "You appear to be already registered.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Submit Registration";
+
+        } else if (resp.status === 400 && json.errors) {
+          // ── Field validation errors from server ───────────────
+          for (const [field, msg] of Object.entries(json.errors)) {
+            showErr(field, msg);
+          }
+          showBanner("Please fix the errors above and try again.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Submit Registration";
+
+        } else if (resp.status === 429) {
+          showBanner("Too many attempts. Please wait a while and try again.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Submit Registration";
+
+        } else {
+          showBanner("Something went wrong on the server. Please try again in a moment.");
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = "Submit Registration";
+        }
+
+      } catch (err) {
+        showBanner("Could not reach the server — please check your internet connection and try again.");
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = "Submit Registration";
+      }
+    });
+  </script>
+</body>
+</html>
