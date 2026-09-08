@@ -51,3 +51,15 @@ class HostelViewSet(viewsets.ModelViewSet):
         img.save(buf, format="PNG")
         buf.seek(0)
         return HttpResponse(buf.read(), content_type="image/png")
+
+    @action(detail=True, methods=["get"], permission_classes=[])
+    def qr(self, request, pk=None):
+        hostel = self.get_object()
+        intake_url = request.build_absolute_uri(f"/intake/{hostel.id}/")
+
+        qr_img = qrcode.make(intake_url)
+        buffer = io.BytesIO()
+        qr_img.save(buffer, format="PNG")
+        buffer.seek(0)
+
+        return HttpResponse(buffer.getvalue(), content_type="image/png")
