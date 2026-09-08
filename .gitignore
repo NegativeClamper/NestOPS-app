@@ -37,6 +37,8 @@ build/
 venv/
 env/
 *.env
+.env
+.env.*
 *.sqlite3
 media/
 
