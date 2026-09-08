@@ -210,7 +210,7 @@ export default function DuesListScreen({ navigation }: any) {
         renderItem={({ item }) => (
           <ResidentCycleCard
             item={item}
-            onPress={() => navigation.navigate('ResidentDetail', { id: item.id })}
+            onPress={() => navigation.navigate('Residents', { screen: 'ResidentDetail', params: { id: item.id } })}
             onCollect={() =>
               navigation.navigate('RecordPayment', {
                 residentId: item.id,
