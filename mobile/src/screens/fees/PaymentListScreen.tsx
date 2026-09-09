@@ -124,11 +124,12 @@ export default function PaymentListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
-      {/* Hostel switcher */}
+      {/* Hostel switcher — null = All Hostels (default) */}
       <HostelSwitcherBar
         hostels={hostels}
         selectedId={selectedHostelId}
         onSelect={setSelectedHostel}
+        allowAll
       />
 
       {/* Month nav */}

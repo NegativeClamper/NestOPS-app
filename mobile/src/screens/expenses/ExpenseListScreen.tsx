@@ -109,11 +109,12 @@ export default function ExpenseListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
-      {/* Hostel switcher */}
+      {/* Hostel switcher — null = All Hostels (default) */}
       <HostelSwitcherBar
         hostels={hostels}
         selectedId={selectedHostelId}
         onSelect={setSelectedHostel}
+        allowAll
       />
 
       {/* Month navigator */}

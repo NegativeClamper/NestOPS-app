@@ -62,6 +62,10 @@ export default function ResidentListScreen({ navigation }: any) {
           {item.room_number ? `Room ${item.room_number}` : 'No room assigned'}
           {item.sharing_type_name ? ` • ${item.sharing_type_name}` : ''}
         </Text>
+        {/* Show hostel name when viewing all hostels combined */}
+        {selectedHostelId === null && item.hostel_name && (
+          <Text style={styles.hostelTag}>{item.hostel_name}</Text>
+        )}
         <Text style={styles.phone}>{item.phone}</Text>
       </View>
       <View style={styles.right}>
@@ -79,11 +83,12 @@ export default function ResidentListScreen({ navigation }: any) {
 
   return (
     <ScreenContainer>
-      {/* Hostel switcher */}
+      {/* Hostel switcher — null = All Hostels (default) */}
       <HostelSwitcherBar
         hostels={hostels}
         selectedId={selectedHostelId}
         onSelect={setSelectedHostel}
+        allowAll
       />
 
       {/* Search + Filter bar */}
@@ -198,6 +203,12 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.textPrimary },
   sub: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary, marginTop: 2 },
+  hostelTag: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+    marginTop: 2,
+  },
   phone: { fontSize: Typography.fontSize.sm, color: Colors.textMuted, marginTop: 1 },
   right: { alignItems: 'flex-end', gap: Spacing[1] },
   fee: { fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.primary },
