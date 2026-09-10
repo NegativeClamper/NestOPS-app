@@ -67,7 +67,7 @@ npx expo run:android
 
 ---
 
-## Creating the First Owner Account
+## Creating the First Owner
 
 After running `python manage.py createsuperuser`:
 
