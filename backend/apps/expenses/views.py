@@ -50,7 +50,7 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     Expense CRUD with category/date filtering and monthly summary.
     """
     queryset = (
-        Expense.objects.select_related("category", "recorded_by").all()
+        Expense.objects.select_related("category", "hostel", "recorded_by").all()
     )
     serializer_class = ExpenseSerializer
     permission_classes = [IsOwnerOrStaff]

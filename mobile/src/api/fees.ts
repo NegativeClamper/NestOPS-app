@@ -5,6 +5,8 @@ export interface Payment {
   resident: number;
   resident_name: string;
   room_number: string | null;
+  hostel: number | null;
+  hostel_name: string | null;
   amount: string;
   date_paid: string;
   payment_method: 'cash' | 'upi' | 'bank_transfer' | 'cheque';

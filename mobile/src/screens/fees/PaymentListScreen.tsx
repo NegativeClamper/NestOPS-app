@@ -111,6 +111,10 @@ export default function PaymentListScreen({ navigation }: any) {
       <View style={styles.cardInfo}>
         <Text style={styles.residentName}>{item.resident_name}</Text>
         <Text style={styles.room}>{item.room_number ? `Room ${item.room_number}` : ''}</Text>
+        {/* Show hostel name when viewing all hostels combined */}
+        {selectedHostelId === null && item.hostel_name && (
+          <Text style={styles.hostelTag}>{item.hostel_name}</Text>
+        )}
         <View style={styles.metaRow}>
           <Text style={styles.method}>{paymentMethodLabel(item.payment_method)}</Text>
           <Text style={styles.dot}>·</Text>
@@ -209,6 +213,12 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1, padding: Spacing[4], gap: 2 },
   residentName: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.semibold, color: Colors.textPrimary },
   room: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  hostelTag: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+    marginTop: 1,
+  },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing[1] },
   method: { fontSize: Typography.fontSize.sm, color: Colors.textMuted },
   dot: { fontSize: Typography.fontSize.sm, color: Colors.textMuted },

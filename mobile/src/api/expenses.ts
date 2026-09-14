@@ -12,6 +12,8 @@ export interface Expense {
   category: number;
   category_name: string;
   category_icon: string;
+  hostel: number | null;
+  hostel_name: string | null;
   amount: string;
   date: string;
   description: string;

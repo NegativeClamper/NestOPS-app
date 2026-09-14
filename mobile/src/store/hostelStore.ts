@@ -7,10 +7,10 @@
  * Usage:
  *   const { selectedHostelId, setSelectedHostel } = useHostelStore();
  *
- * For screens that need "All Hostels" (Dashboard only), selectedHostelId
- * will be null when "All Hostels" is chosen.
- * For screens that always require a specific hostel (Residents, Payments,
- * Expenses), just read selectedHostelId and pass it to the API.
+ * `selectedHostelId === null` means "All Hostels" — all four main screens
+ * (Dashboard, Residents, Payments, Expenses) support this mode and show
+ * combined data across all hostels.  Selecting a specific hostel id narrows
+ * every screen to that hostel's data.
  */
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';

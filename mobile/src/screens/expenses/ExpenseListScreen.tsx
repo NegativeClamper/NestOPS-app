@@ -101,6 +101,10 @@ export default function ExpenseListScreen({ navigation }: any) {
       <View style={styles.cardInfo}>
         <Text style={styles.description} numberOfLines={1}>{item.description}</Text>
         <Text style={styles.category}>{item.category_name}</Text>
+        {/* Show hostel name when viewing all hostels combined */}
+        {selectedHostelId === null && item.hostel_name && (
+          <Text style={styles.hostelTag}>{item.hostel_name}</Text>
+        )}
         <Text style={styles.date}>{formatDate(item.date)}</Text>
       </View>
       <Text style={styles.amount}>{formatCurrency(item.amount)}</Text>
@@ -225,6 +229,12 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   description: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.medium, color: Colors.textPrimary },
   category: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  hostelTag: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+    marginTop: 1,
+  },
   date: { fontSize: Typography.fontSize.xs, color: Colors.textMuted },
   amount: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
 
