@@ -1,51 +1,67 @@
 /**
  * useHostelStore
  *
- * Single source of truth for the currently selected hostel across the app.
- * Persisted to AsyncStorage so the selection survives app restarts.
+ * Single source of truth for hostel selection, split into two independent slots:
  *
- * Usage:
- *   const { selectedHostelId, setSelectedHostel } = useHostelStore();
+ * 1. dashboardHostelId  — used by DashboardScreen only. null = "All Hostels".
+ *    Persisted under "dashboard_hostel_id".
  *
- * `selectedHostelId === null` means "All Hostels" — all four main screens
- * (Dashboard, Residents, Payments, Expenses) support this mode and show
- * combined data across all hostels.  Selecting a specific hostel id narrows
- * every screen to that hostel's data.
+ * 2. selectedHostelId   — used by Residents, Payments, Expenses screens.
+ *    null = "All Hostels". Persisted under "selected_hostel_id".
+ *
+ * The two slots are completely independent so selecting a hostel in Residents
+ * does NOT change what Dashboard shows, and vice-versa.
  */
 import { create } from 'zustand';
 import * as SecureStore from 'expo-secure-store';
 
-const STORAGE_KEY = 'selected_hostel_id';
+const DASHBOARD_KEY  = 'dashboard_hostel_id';
+const OPS_KEY        = 'selected_hostel_id';
 
 interface HostelState {
+  // Dashboard slot
+  dashboardHostelId: number | null;
+  setDashboardHostel: (id: number | null) => Promise<void>;
+
+  // Operational screens slot (Residents / Payments / Expenses)
   selectedHostelId: number | null;
-  isLoaded: boolean;
   setSelectedHostel: (id: number | null) => Promise<void>;
+
+  // Shared loader — loads both slots from SecureStore once
+  isLoaded: boolean;
   loadPersistedHostel: () => Promise<void>;
 }
 
 export const useHostelStore = create<HostelState>((set) => ({
-  selectedHostelId: null,
+  dashboardHostelId: null,
+  selectedHostelId:  null,
   isLoaded: false,
 
-  setSelectedHostel: async (id: number | null) => {
+  setDashboardHostel: async (id) => {
+    set({ dashboardHostelId: id });
+    try {
+      if (id === null) await SecureStore.deleteItemAsync(DASHBOARD_KEY);
+      else             await SecureStore.setItemAsync(DASHBOARD_KEY, String(id));
+    } catch (_) {}
+  },
+
+  setSelectedHostel: async (id) => {
     set({ selectedHostelId: id });
     try {
-      if (id === null) {
-        await SecureStore.deleteItemAsync(STORAGE_KEY);
-      } else {
-        await SecureStore.setItemAsync(STORAGE_KEY, String(id));
-      }
-    } catch (_) {
-      // SecureStore failure is non-fatal — selection still works in-memory
-    }
+      if (id === null) await SecureStore.deleteItemAsync(OPS_KEY);
+      else             await SecureStore.setItemAsync(OPS_KEY, String(id));
+    } catch (_) {}
   },
 
   loadPersistedHostel: async () => {
     try {
-      const stored = await SecureStore.getItemAsync(STORAGE_KEY);
+      const [dash, ops] = await Promise.all([
+        SecureStore.getItemAsync(DASHBOARD_KEY),
+        SecureStore.getItemAsync(OPS_KEY),
+      ]);
       set({
-        selectedHostelId: stored ? Number(stored) : null,
+        dashboardHostelId: dash ? Number(dash) : null,
+        selectedHostelId:  ops  ? Number(ops)  : null,
         isLoaded: true,
       });
     } catch (_) {

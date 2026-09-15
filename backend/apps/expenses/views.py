@@ -21,6 +21,7 @@ class ExpenseCategoryViewSet(viewsets.ModelViewSet):
     queryset = ExpenseCategory.objects.all()
     serializer_class = ExpenseCategorySerializer
     permission_classes = [IsOwnerOrReadOnly]
+    pagination_class = None  # categories are a small static list; return bare array
 
     def destroy(self, request, *args, **kwargs):
         category = self.get_object()

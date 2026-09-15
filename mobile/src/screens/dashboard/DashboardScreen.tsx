@@ -41,7 +41,7 @@ function SimpleBarChart({ data }: { data: Array<{ month_label: string; revenue: 
 }
 
 export default function DashboardScreen({ navigation }: any) {
-  const { selectedHostelId, setSelectedHostel, loadPersistedHostel, isLoaded } = useHostelStore();
+  const { dashboardHostelId, setDashboardHostel, loadPersistedHostel, isLoaded } = useHostelStore();
 
   // Load persisted hostel selection on first mount
   useEffect(() => {
@@ -54,8 +54,8 @@ export default function DashboardScreen({ navigation }: any) {
   });
 
   const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ['dashboard', selectedHostelId],
-    queryFn: () => reportsApi.getDashboard(selectedHostelId),
+    queryKey: ['dashboard', dashboardHostelId],
+    queryFn: () => reportsApi.getDashboard(dashboardHostelId),
     refetchInterval: 60000,
     enabled: isLoaded, // wait until persisted selection is loaded
   });
@@ -100,11 +100,11 @@ export default function DashboardScreen({ navigation }: any) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={Colors.primary} />}
     >
-      {/* Hostel switcher */}
+      {/* Hostel switcher — Dashboard has its own independent selection */}
       <HostelSwitcherBar
         hostels={hostels}
-        selectedId={selectedHostelId}
-        onSelect={setSelectedHostel}
+        selectedId={dashboardHostelId}
+        onSelect={setDashboardHostel}
         allowAll
       />
 
