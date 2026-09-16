@@ -20,7 +20,7 @@ export default function RoomListScreen({ navigation }: any) {
     queryFn: () => roomsApi.list(),
   });
 
-  const rooms: Room[] = data?.results || data || [];
+  const rooms: Room[] = data?.results ?? [];
 
   const renderRoom = ({ item }: { item: Room }) => {
     const isFullyOccupied = item.vacant_beds === 0;

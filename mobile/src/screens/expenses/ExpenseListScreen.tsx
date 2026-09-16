@@ -143,7 +143,7 @@ export default function ExpenseListScreen({ navigation }: any) {
           {Object.entries(summaryData.by_category).map(([cat, amt]) => (
             <View key={cat} style={styles.breakdownRow}>
               <Text style={styles.breakdownCat}>{cat}</Text>
-              <Text style={styles.breakdownAmt}>{formatCurrency(amt)}</Text>
+              <Text style={styles.breakdownAmt}>{formatCurrency(amt as number)}</Text>
             </View>
           ))}
         </View>

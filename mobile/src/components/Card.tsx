@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { Colors, Typography, BorderRadius, Shadow, Spacing } from '../theme';
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   title?: string;
   rightElement?: React.ReactNode;
 }
@@ -27,7 +27,7 @@ interface StatCardProps {
   subtitle?: string;
   accent?: string;
   icon?: string;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
