@@ -4,6 +4,7 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  StyleProp,
   ViewStyle,
   TextStyle,
   TouchableOpacityProps,
@@ -33,7 +34,7 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const containerStyle: ViewStyle[] = [
+  const containerStyle: StyleProp<ViewStyle> = [
     styles.base,
     styles[variant],
     styles[`size_${size}`],

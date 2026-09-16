@@ -154,7 +154,7 @@ export default function RoomEditScreen({ route, navigation }: any) {
       // 1. Save room-level fields
       await roomsApi.update(id, {
         room_number: roomNumber.trim(),
-        sharing_type: selectedSharingTypeId,
+        sharing_type: selectedSharingTypeId ?? undefined,
         floor: floor.trim(),
         notes: notes.trim(),
       });

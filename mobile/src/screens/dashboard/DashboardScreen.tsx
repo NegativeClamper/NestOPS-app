@@ -4,6 +4,8 @@ import {
   Text,
   ScrollView,
   StyleSheet,
+  StyleProp,
+  ViewStyle,
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
@@ -133,7 +135,7 @@ export default function DashboardScreen({ navigation }: any) {
           style={styles.halfCard}
         />
       </View>
-      <Card style={[styles.plCard, { borderLeftColor: isProfit ? Colors.success : Colors.danger }]}>
+      <Card style={[styles.plCard, { borderLeftColor: isProfit ? Colors.success : Colors.danger }] as StyleProp<ViewStyle>}>
         <Text style={styles.plLabel}>Net P&L — This Month</Text>
         <Text style={[styles.plValue, { color: isProfit ? Colors.success : Colors.danger }]}>
           {isProfit ? '+' : ''}{formatCurrency(net_pl)}

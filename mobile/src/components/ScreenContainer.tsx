@@ -10,7 +10,7 @@ import {
 import { Colors, Typography, Spacing } from '../theme';
 
 interface ScreenProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: ViewStyle;
   loading?: boolean;
   error?: string | null;
