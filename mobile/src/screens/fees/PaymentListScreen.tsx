@@ -53,7 +53,8 @@ export default function PaymentListScreen({ navigation }: any) {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['payments', year, month, selectedHostelId],
     queryFn: () => feesApi.listPayments({
-      period_month: periodMonth,
+      period_year: year,
+      period_month_num: month,
       hostel: selectedHostelId ?? undefined,
     }),
     placeholderData: (prev) => prev,

@@ -43,7 +43,8 @@ export const feesApi = {
   // Payments
   listPayments: async (params?: {
     resident?: number;
-    period_month?: string;
+    period_year?: number;
+    period_month_num?: number;
     payment_method?: string;
     hostel?: number;
     page?: number;
