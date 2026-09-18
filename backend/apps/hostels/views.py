@@ -1,8 +1,10 @@
 import io
+import qrcode
 from django.http import HttpResponse
 from django.conf import settings
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 import django_filters
 
@@ -34,15 +36,25 @@ class HostelViewSet(viewsets.ModelViewSet):
     ordering_fields = ["name", "monthly_rate"]
     ordering = ["name"]
 
-    @action(detail=True, methods=["get"], url_path="qr")
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path="qr",
+        permission_classes=[AllowAny],
+        authentication_classes=[],   # skip JWT entirely — QR is a public image
+    )
     def qr_code(self, request, pk=None):
         """
         GET /api/hostels/<id>/qr/
-        Returns a PNG QR code image encoding the intake URL for this hostel.
+        Returns a PNG QR code image encoding the public intake URL for this hostel.
+        No authentication required — the QR only contains a public URL.
         """
-        import qrcode
+        try:
+            hostel = Hostel.objects.get(pk=pk)
+        except Hostel.DoesNotExist:
+            from django.http import Http404
+            raise Http404
 
-        hostel = self.get_object()
         base_url = getattr(settings, "INTAKE_BASE_URL", "http://localhost:8000")
         intake_url = f"{base_url}/intake/{hostel.id}/"
 
@@ -51,15 +63,3 @@ class HostelViewSet(viewsets.ModelViewSet):
         img.save(buf, format="PNG")
         buf.seek(0)
         return HttpResponse(buf.read(), content_type="image/png")
-
-    @action(detail=True, methods=["get"], permission_classes=[])
-    def qr(self, request, pk=None):
-        hostel = self.get_object()
-        intake_url = request.build_absolute_uri(f"/intake/{hostel.id}/")
-
-        qr_img = qrcode.make(intake_url)
-        buffer = io.BytesIO()
-        qr_img.save(buffer, format="PNG")
-        buffer.seek(0)
-
-        return HttpResponse(buffer.getvalue(), content_type="image/png")

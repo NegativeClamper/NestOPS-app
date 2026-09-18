@@ -186,14 +186,12 @@ function AddStaffModal({ visible, onClose, onSaved }: { visible: boolean; onClos
 
 // ─── QR Code Modal ────────────────────────────────────────────────────────────
 function QrModal({ hostel, visible, onClose }: { hostel: Hostel | null; visible: boolean; onClose: () => void }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  const qrUrl = hostel ? intakeApi.getQrCodeUrl(hostel.id) : null;
-
-  React.useEffect(() => {
-    if (visible) { setImageLoaded(false); setImageError(false); }
-  }, [visible, hostel]);
+  const { data: dataUri, isLoading, isError } = useQuery({
+    queryKey: ['qr-code', hostel?.id],
+    queryFn: () => intakeApi.getQrCodeDataUri(hostel!.id),
+    enabled: visible && hostel !== null,
+    staleTime: 5 * 60 * 1000, // cache for 5 min — QR doesn't change
+  });
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -207,24 +205,19 @@ function QrModal({ hostel, visible, onClose }: { hostel: Hostel | null; visible:
             Print this QR code and post it at the hostel entrance. New residents scan it to register themselves.
           </Text>
           <View style={styles.qrImageWrap}>
-            {qrUrl && !imageError ? (
-              <Image
-                source={{ uri: qrUrl }}
-                style={styles.qrImage}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => setImageError(true)}
-              />
-            ) : null}
-            {qrUrl && !imageLoaded && !imageError && (
+            {isLoading && (
               <View style={styles.qrPlaceholder}>
                 <ActivityIndicator color={Colors.primary} />
-                <Text style={styles.qrPlaceholderText}>Loading QR…</Text>
+                <Text style={styles.qrPlaceholderText}>Generating QR…</Text>
               </View>
             )}
-            {imageError && (
+            {isError && (
               <View style={styles.qrPlaceholder}>
                 <Text style={styles.qrPlaceholderText}>Could not load QR. Check backend connection.</Text>
               </View>
+            )}
+            {dataUri && (
+              <Image source={{ uri: dataUri }} style={styles.qrImage} resizeMode="contain" />
             )}
           </View>
           {hostel && (

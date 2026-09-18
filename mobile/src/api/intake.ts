@@ -23,10 +23,21 @@ export const intakeApi = {
     await apiClient.post(`/fees/${id}/verify/`);
   },
 
-  /** Returns the full URL for a hostel's QR code PNG image */
-  getQrCodeUrl: (hostelId: number): string => {
-    // The QR endpoint returns a PNG — we display it directly as an Image source
-    const base = (apiClient.defaults.baseURL || '').replace(/\/api$/, '');
-    return `${base}/api/hostels/${hostelId}/qr/`;
+  /**
+   * Fetches the QR code PNG for a hostel via axios (so auth headers are sent)
+   * and returns it as a base64 data URI that React Native's <Image> can display.
+   */
+  getQrCodeDataUri: async (hostelId: number): Promise<string> => {
+    const response = await apiClient.get(`/hostels/${hostelId}/qr/`, {
+      responseType: 'arraybuffer',
+    });
+    // Convert ArrayBuffer → base64 string
+    const bytes = new Uint8Array(response.data as ArrayBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    return `data:image/png;base64,${base64}`;
   },
 };
