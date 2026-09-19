@@ -48,6 +48,12 @@ class Resident(models.Model):
 
     notes = models.TextField(blank=True)
 
+    # Fee discount (e.g. referral concession)
+    discount = models.DecimalField(
+        max_digits=7, decimal_places=2, default=0,
+        help_text="Discount deducted from the hostel's base rate for this resident.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -71,9 +77,20 @@ class Resident(models.Model):
     @property
     def monthly_fee(self):
         """
-        The resident's monthly rate.
-        Prefers hostel.monthly_rate (new model) over the legacy bed/sharing_type rate.
+        The resident's effective monthly rate after discount.
+        Returns hostel.monthly_rate - discount (floored at 0).
+        Falls back to bed/sharing_type rate if no hostel is set.
         """
+        if self.hostel_id:
+            base = self.hostel.monthly_rate
+            return max(base - self.discount, 0)
+        if self.bed and self.bed.room.sharing_type:
+            return max(self.bed.room.sharing_type.monthly_rate - self.discount, 0)
+        return None
+
+    @property
+    def base_rate(self):
+        """The hostel's standard monthly rate before any discount."""
         if self.hostel_id:
             return self.hostel.monthly_rate
         if self.bed and self.bed.room.sharing_type:

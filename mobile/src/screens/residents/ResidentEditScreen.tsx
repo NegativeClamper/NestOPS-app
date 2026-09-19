@@ -38,9 +38,15 @@ export default function ResidentEditScreen({ route, navigation }: any) {
   const [parentPhone, setParentPhone] = useState('');
   const [joinDate, setJoinDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [discount, setDiscount] = useState('0');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [showHostelPicker, setShowHostelPicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Computed fee preview
+  const baseRate = selectedHostel ? Number(selectedHostel.monthly_rate) : null;
+  const discountAmt = Math.max(0, parseFloat(discount) || 0);
+  const netFee = baseRate !== null ? Math.max(0, baseRate - discountAmt) : null;
 
   useEffect(() => {
     if (resident) {
@@ -50,6 +56,7 @@ export default function ResidentEditScreen({ route, navigation }: any) {
       setParentPhone(resident.parent_phone || '');
       setJoinDate(resident.check_in_date);
       setNotes(resident.notes || '');
+      setDiscount(resident.discount ?? '0');
     }
   }, [resident]);
 
@@ -90,6 +97,9 @@ export default function ResidentEditScreen({ route, navigation }: any) {
     if (!name.trim()) e.name = 'Name is required.';
     if (!phone.trim()) e.phone = 'Phone is required.';
     if (!selectedHostel) e.hostel = 'Please select a hostel.';
+    const d = parseFloat(discount);
+    if (isNaN(d) || d < 0) e.discount = 'Discount must be 0 or a positive number.';
+    else if (baseRate !== null && d > baseRate) e.discount = `Discount cannot exceed base rate (₹${baseRate}).`;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -103,6 +113,7 @@ export default function ResidentEditScreen({ route, navigation }: any) {
     formData.append('parent_phone', parentPhone.trim());
     formData.append('check_in_date', joinDate);
     formData.append('hostel', String(selectedHostel!.id));
+    formData.append('discount', String(parseFloat(discount) || 0));
     if (notes) formData.append('notes', notes.trim());
     mutation.mutate(formData);
   };
@@ -136,6 +147,35 @@ export default function ResidentEditScreen({ route, navigation }: any) {
             </TouchableOpacity>
             {errors.hostel ? <Text style={styles.fieldError}>{errors.hostel}</Text> : null}
           </View>
+
+          {/* Discount input + fee preview */}
+          {selectedHostel && (
+            <>
+              <Input
+                label="Discount (₹)"
+                value={discount}
+                onChangeText={setDiscount}
+                keyboardType="numeric"
+                placeholder="0"
+                hint="Concession for referrals, staff relatives, etc."
+                error={errors.discount}
+              />
+              <View style={styles.feePreview}>
+                <View style={styles.feeRow}>
+                  <Text style={styles.feeLabel}>Base rate</Text>
+                  <Text style={styles.feeValue}>₹{baseRate?.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={styles.feeRow}>
+                  <Text style={styles.feeLabel}>Discount</Text>
+                  <Text style={[styles.feeValue, { color: Colors.danger }]}>− ₹{discountAmt.toLocaleString('en-IN')}</Text>
+                </View>
+                <View style={[styles.feeRow, styles.feeRowTotal]}>
+                  <Text style={styles.feeLabelTotal}>Net monthly fee</Text>
+                  <Text style={styles.feeValueTotal}>₹{netFee?.toLocaleString('en-IN')}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
 
         {/* Section: Personal */}
@@ -249,6 +289,25 @@ const styles = StyleSheet.create({
   pickerSub: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary, marginTop: 2 },
   pickerPlaceholder: { fontSize: Typography.fontSize.base, color: Colors.gray400 },
   chevron: { fontSize: 22, color: Colors.gray400 },
+
+  // Fee preview box
+  feePreview: {
+    backgroundColor: Colors.gray100,
+    borderRadius: BorderRadius.md,
+    padding: Spacing[3],
+    gap: Spacing[2],
+  },
+  feeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  feeLabel: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  feeValue: { fontSize: Typography.fontSize.sm, fontWeight: Typography.fontWeight.medium, color: Colors.textPrimary },
+  feeRowTotal: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Spacing[2],
+    marginTop: Spacing[1],
+  },
+  feeLabelTotal: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
+  feeValueTotal: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.bold, color: Colors.primary },
 
   modal: { flex: 1, backgroundColor: Colors.background },
   modalHeader: {

@@ -21,7 +21,9 @@ export interface ResidentListItem {
   hostel_name: string | null;
   room_number: string | null;
   sharing_type_name: string | null;
-  monthly_fee: string | null;
+  discount: string;       // Decimal string, default "0.00"
+  base_rate: string | null;
+  monthly_fee: string | null; // base_rate - discount
   check_in_date: string;
   check_out_date: string | null;
   status: 'active' | 'checked_out';
@@ -43,7 +45,9 @@ export interface Resident {
   bed_label: string | null;
   room_number: string | null;
   sharing_type_name: string | null;
-  monthly_fee: string | null;
+  discount: string;       // Decimal string, default "0.00"
+  base_rate: string | null;
+  monthly_fee: string | null; // base_rate - discount
   check_in_date: string;
   check_out_date: string | null;
   status: 'active' | 'checked_out';

@@ -28,18 +28,20 @@ class ResidentListSerializer(serializers.ModelSerializer):
     Includes current_cycle so the mobile app can show paid/overdue badges
     without a second API call per resident.
     """
-    room_number      = serializers.SerializerMethodField()
+    room_number       = serializers.SerializerMethodField()
     sharing_type_name = serializers.SerializerMethodField()
-    monthly_fee      = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
-    hostel_name      = serializers.CharField(source="hostel.name", read_only=True, default=None)
-    current_cycle    = serializers.SerializerMethodField()
+    monthly_fee       = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    base_rate         = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    hostel_name       = serializers.CharField(source="hostel.name", read_only=True, default=None)
+    current_cycle     = serializers.SerializerMethodField()
 
     class Meta:
         model = Resident
         fields = [
             "id", "name", "phone", "parent_name", "parent_phone",
             "hostel", "hostel_name",
-            "room_number", "sharing_type_name", "monthly_fee",
+            "room_number", "sharing_type_name",
+            "discount", "base_rate", "monthly_fee",
             "check_in_date", "check_out_date", "status",
             "current_cycle",
             "created_at",
@@ -75,6 +77,7 @@ class ResidentDetailSerializer(serializers.ModelSerializer):
     room_number       = serializers.SerializerMethodField(read_only=True)
     sharing_type_name = serializers.SerializerMethodField(read_only=True)
     monthly_fee       = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    base_rate         = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     bed_label         = serializers.SerializerMethodField(read_only=True)
     hostel_name       = serializers.CharField(source="hostel.name", read_only=True, default=None)
     current_cycle     = serializers.SerializerMethodField(read_only=True)
@@ -85,7 +88,8 @@ class ResidentDetailSerializer(serializers.ModelSerializer):
             "id", "name", "phone", "parent_name", "parent_phone",
             "id_proof",
             "hostel", "hostel_name",
-            "bed", "bed_label", "room_number", "sharing_type_name", "monthly_fee",
+            "bed", "bed_label", "room_number", "sharing_type_name",
+            "discount", "base_rate", "monthly_fee",
             "check_in_date", "check_out_date", "status",
             "current_cycle",
             "notes",
