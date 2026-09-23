@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  SafeAreaView,
   ViewStyle,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors, Typography, Spacing } from '../theme';
 
 interface ScreenProps {
