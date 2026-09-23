@@ -18,6 +18,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { residentsApi, ResidentListItem } from '../../api/residents';
@@ -149,11 +150,22 @@ function ResidentCycleCard({
         </View>
       </View>
 
-      {/* Collect button — only shown when not paid */}
+      {/* Action column — only shown when not paid */}
       {status !== 'paid' && (
-        <TouchableOpacity style={styles.collectBtn} onPress={onCollect}>
-          <Text style={styles.collectBtnText}>Collect</Text>
-        </TouchableOpacity>
+        <View style={styles.actionCol}>
+          {item.phone ? (
+            <TouchableOpacity 
+              style={styles.callBtn} 
+              onPress={() => Linking.openURL(`tel:${item.phone}`)}
+            >
+              <Text style={styles.callIcon}>📞</Text>
+              <Text style={styles.phoneText} numberOfLines={1}>{item.phone}</Text>
+            </TouchableOpacity>
+          ) : null}
+          <TouchableOpacity style={styles.collectBtn} onPress={onCollect}>
+            <Text style={styles.collectBtnText}>Collect</Text>
+          </TouchableOpacity>
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -309,12 +321,36 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  // Collect button
-  collectBtn: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Spacing[3],
-    paddingVertical: Spacing[4],
+  // Actions Column
+  actionCol: {
     alignSelf: 'stretch',
+    borderLeftWidth: 1,
+    borderLeftColor: Colors.border,
+    width: 100,
+  },
+  callBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.gray50,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    paddingHorizontal: Spacing[1],
+  },
+  callIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  phoneText: {
+    fontSize: 11,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  collectBtn: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
     justifyContent: 'center',
   },
   collectBtnText: {

@@ -142,14 +142,8 @@ def cycle_status_for_resident(resident: Resident, today: date = None) -> dict | 
     if not join_date:
         return None
 
-    # Determine monthly rate: prefer hostel.monthly_rate, fall back to
-    # bed.room.sharing_type.monthly_rate (legacy), then None.
-    monthly_rate = None
-    if resident.hostel_id:
-        monthly_rate = resident.hostel.monthly_rate
-    elif resident.bed and resident.bed.room.sharing_type:
-        monthly_rate = resident.bed.room.sharing_type.monthly_rate
-
+    # Determine monthly rate (automatically includes discount)
+    monthly_rate = resident.monthly_fee
     if monthly_rate is None:
         return None
 
@@ -190,13 +184,8 @@ def compute_dues_for_resident(resident: Resident, today: date = None) -> list[di
     if not join_date:
         return []
 
-    # Monthly rate: hostel takes priority over legacy bed rate
-    monthly_rate = None
-    if resident.hostel_id:
-        monthly_rate = resident.hostel.monthly_rate
-    elif resident.bed and resident.bed.room.sharing_type:
-        monthly_rate = resident.bed.room.sharing_type.monthly_rate
-
+    # Monthly rate (automatically includes discount)
+    monthly_rate = resident.monthly_fee
     if monthly_rate is None:
         return []
 
