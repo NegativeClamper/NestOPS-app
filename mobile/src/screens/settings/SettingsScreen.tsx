@@ -407,6 +407,25 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
 
+        {/* Hostel Layouts */}
+        {user?.role === 'owner' && (
+          <TouchableOpacity
+            style={styles.navRow}
+            onPress={() => navigation.navigate('RoomList')}
+          >
+            <View style={styles.navRowLeft}>
+              <Text style={styles.navRowIcon}>🛏️</Text>
+              <View>
+                <Text style={styles.navRowTitle}>Hostel Layouts</Text>
+                <Text style={styles.navRowSub}>Manage rooms and bed configurations</Text>
+              </View>
+            </View>
+            <View style={styles.navRowRight}>
+              <Text style={styles.navChevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Staff accounts — Owner only */}
         {user?.role === 'owner' && (
           <View style={styles.section}>

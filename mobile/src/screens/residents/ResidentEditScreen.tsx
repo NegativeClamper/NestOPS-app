@@ -12,6 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { residentsApi } from '../../api/residents';
 import { hostelsApi, Hostel } from '../../api/hostels';
+import { roomsApi, Bed } from '../../api/rooms';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
@@ -41,7 +42,15 @@ export default function ResidentEditScreen({ route, navigation }: any) {
   const [discount, setDiscount] = useState('0');
   const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
   const [showHostelPicker, setShowHostelPicker] = useState(false);
+  const [selectedBed, setSelectedBed] = useState<Bed | null>(null);
+  const [showBedPicker, setShowBedPicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: vacantBeds = [], isLoading: isLoadingBeds } = useQuery({
+    queryKey: ['vacant-beds', selectedHostel?.id],
+    queryFn: () => roomsApi.getVacantBeds({ room__hostel: selectedHostel!.id }),
+    enabled: !!selectedHostel,
+  });
 
   // Computed fee preview
   const baseRate = selectedHostel ? Number(selectedHostel.monthly_rate) : null;
@@ -57,6 +66,17 @@ export default function ResidentEditScreen({ route, navigation }: any) {
       setJoinDate(resident.check_in_date);
       setNotes(resident.notes || '');
       setDiscount(resident.discount ?? '0');
+      if (resident.bed) {
+        setSelectedBed({
+          id: resident.bed,
+          room: 0, // Not fully used here
+          room_number: resident.room_number || '',
+          sharing_type: resident.sharing_type_name || '',
+          bed_label: resident.bed_label || '',
+          status: 'occupied',
+          hostel_id: resident.hostel,
+        } as Bed);
+      }
     }
   }, [resident]);
 
@@ -113,6 +133,7 @@ export default function ResidentEditScreen({ route, navigation }: any) {
     formData.append('parent_phone', parentPhone.trim());
     formData.append('check_in_date', joinDate);
     formData.append('hostel', String(selectedHostel!.id));
+    if (selectedBed) formData.append('bed', String(selectedBed.id));
     formData.append('discount', String(parseFloat(discount) || 0));
     if (notes) formData.append('notes', notes.trim());
     mutation.mutate(formData);
@@ -147,6 +168,29 @@ export default function ResidentEditScreen({ route, navigation }: any) {
             </TouchableOpacity>
             {errors.hostel ? <Text style={styles.fieldError}>{errors.hostel}</Text> : null}
           </View>
+
+          {/* Bed Assignment (only shown if a hostel is selected) */}
+          {selectedHostel && (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>Bed (Optional)</Text>
+              <TouchableOpacity
+                style={styles.pickerBtn}
+                onPress={() => setShowBedPicker(true)}
+              >
+                {selectedBed ? (
+                  <View>
+                    <Text style={styles.pickerValue}>Room {selectedBed.room_number} — Bed {selectedBed.bed_label}</Text>
+                    <Text style={styles.pickerSub}>{selectedBed.sharing_type}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.pickerPlaceholder}>
+                    {isLoadingBeds ? 'Loading beds…' : 'Select a bed…'}
+                  </Text>
+                )}
+                <Text style={styles.chevron}>›</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Discount input + fee preview */}
           {selectedHostel && (
@@ -224,7 +268,10 @@ export default function ResidentEditScreen({ route, navigation }: any) {
                   selectedHostel?.id === item.id && styles.hostelItemSelected,
                 ]}
                 onPress={() => {
-                  setSelectedHostel(item);
+                  if (selectedHostel?.id !== item.id) {
+                    setSelectedHostel(item);
+                    setSelectedBed(null);
+                  }
                   setShowHostelPicker(false);
                   if (errors.hostel) setErrors(e => ({ ...e, hostel: '' }));
                 }}
@@ -241,6 +288,53 @@ export default function ResidentEditScreen({ route, navigation }: any) {
                     <Text style={styles.hostelCheckmark}>✓</Text>
                   )}
                 </View>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
+
+      {/* Bed Picker Modal */}
+      <Modal visible={showBedPicker} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Bed</Text>
+            <TouchableOpacity onPress={() => setShowBedPicker(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            // Show currently assigned bed (if not in vacant list) + vacant beds
+            data={[
+               ...(selectedBed && !vacantBeds.some(b => b.id === selectedBed.id) ? [selectedBed] : []),
+               ...vacantBeds
+            ]}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={styles.hostelList}
+            ItemSeparatorComponent={() => <View style={{ height: Spacing[2] }} />}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20, color: Colors.textSecondary }}>
+                No beds available in this hostel.
+              </Text>
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.hostelItem,
+                  selectedBed?.id === item.id && styles.hostelItemSelected,
+                ]}
+                onPress={() => {
+                  setSelectedBed(item);
+                  setShowBedPicker(false);
+                }}
+              >
+                <View style={styles.hostelItemLeft}>
+                  <Text style={styles.hostelItemName}>Room {item.room_number}</Text>
+                  <Text style={styles.hostelItemSub}>Bed {item.bed_label} · {item.sharing_type}</Text>
+                </View>
+                {selectedBed?.id === item.id && (
+                  <Text style={styles.hostelCheckmark}>✓</Text>
+                )}
               </TouchableOpacity>
             )}
           />

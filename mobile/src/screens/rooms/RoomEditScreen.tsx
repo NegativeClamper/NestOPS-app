@@ -9,10 +9,12 @@ import {
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { roomsApi, Bed } from '../../api/rooms';
+import { hostelsApi, Hostel } from '../../api/hostels';
 import { ScreenContainer } from '../../components/ScreenContainer';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { Colors, Typography, Spacing, BorderRadius, Shadow } from '../../theme';
+import { FlatList, Modal } from 'react-native';
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -47,7 +49,14 @@ export default function RoomEditScreen({ route, navigation }: any) {
   const [floor, setFloor] = useState('');
   const [notes, setNotes] = useState('');
   const [selectedSharingTypeId, setSelectedSharingTypeId] = useState<number | null>(null);
+  const [selectedHostel, setSelectedHostel] = useState<Hostel | null>(null);
+  const [showHostelPicker, setShowHostelPicker] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const { data: hostels = [] } = useQuery({
+    queryKey: ['hostels'],
+    queryFn: hostelsApi.list,
+  });
 
   // ── Bed state ────────────────────────────────────────────────────────────────
   const [existingBeds, setExistingBeds] = useState<ExistingBed[]>([]);
@@ -63,11 +72,14 @@ export default function RoomEditScreen({ route, navigation }: any) {
       setSelectedSharingTypeId(
         typeof room.sharing_type === 'number' ? room.sharing_type : null,
       );
+      if (room.hostel) {
+         setSelectedHostel(hostels.find(h => h.id === room.hostel) || null);
+      }
       setExistingBeds(
         (room.beds ?? []).map((b) => ({ ...b, _pendingLabel: b.bed_label })),
       );
     }
-  }, [room]);
+  }, [room, hostels]);
 
   // ── Derived values ───────────────────────────────────────────────────────────
   const selectedST = sharingTypes.find((s) => s.id === selectedSharingTypeId);
@@ -131,6 +143,7 @@ export default function RoomEditScreen({ route, navigation }: any) {
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!roomNumber.trim()) e.room_number = 'Room number is required.';
+    if (!selectedHostel) e.hostel = 'Please select a hostel.';
     if (!selectedSharingTypeId) e.sharing_type = 'Please select a sharing type.';
     // Check for duplicate labels across existing + new
     const allLabels = [
@@ -154,6 +167,7 @@ export default function RoomEditScreen({ route, navigation }: any) {
       // 1. Save room-level fields
       await roomsApi.update(id, {
         room_number: roomNumber.trim(),
+        hostel: selectedHostel?.id,
         sharing_type: selectedSharingTypeId ?? undefined,
         floor: floor.trim(),
         notes: notes.trim(),
@@ -244,6 +258,25 @@ export default function RoomEditScreen({ route, navigation }: any) {
           multiline
           numberOfLines={2}
         />
+      </View>
+
+      {/* ── Hostel ───────────────────────────────────────────────────────── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Hostel *</Text>
+        <TouchableOpacity
+          style={[styles.pickerBtn, errors.hostel ? styles.pickerBtnError : null]}
+          onPress={() => setShowHostelPicker(true)}
+        >
+          {selectedHostel ? (
+            <View>
+              <Text style={styles.pickerValue}>{selectedHostel.name}</Text>
+            </View>
+          ) : (
+            <Text style={styles.pickerPlaceholder}>Select a hostel…</Text>
+          )}
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+        {errors.hostel ? <Text style={styles.errorText}>{errors.hostel}</Text> : null}
       </View>
 
       {/* ── Sharing Type ─────────────────────────────────────────────────── */}
@@ -378,6 +411,47 @@ export default function RoomEditScreen({ route, navigation }: any) {
         loading={isSaving}
         fullWidth
       />
+      
+      {/* Hostel Picker Modal */}
+      <Modal visible={showHostelPicker} animationType="slide" presentationStyle="pageSheet">
+        <View style={styles.modal}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Select Hostel</Text>
+            <TouchableOpacity onPress={() => setShowHostelPicker(false)}>
+              <Text style={styles.modalClose}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          <FlatList
+            data={hostels}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={styles.hostelList}
+            ItemSeparatorComponent={() => <View style={{ height: Spacing[2] }} />}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.hostelItem,
+                  selectedHostel?.id === item.id && styles.hostelItemSelected,
+                ]}
+                onPress={() => {
+                  setSelectedHostel(item);
+                  setShowHostelPicker(false);
+                  if (errors.hostel) setErrors(e => ({ ...e, hostel: '' }));
+                }}
+              >
+                <View style={styles.hostelItemLeft}>
+                  <Text style={styles.hostelItemName}>{item.name}</Text>
+                  <Text style={styles.hostelItemSub}>
+                    {item.gender === 'boys' ? '👦 Boys' : '👧 Girls'} · ₹{item.monthly_rate}/mo
+                  </Text>
+                </View>
+                {selectedHostel?.id === item.id && (
+                  <Text style={styles.hostelCheckmark}>✓</Text>
+                )}
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -465,4 +539,52 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing[2] },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendLabel: { fontSize: Typography.fontSize.xs, color: Colors.textMuted },
+
+  pickerBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing[3],
+    paddingVertical: Spacing[3],
+    minHeight: 54,
+    backgroundColor: Colors.white,
+  },
+  pickerBtnError: { borderColor: Colors.danger },
+  pickerValue: { fontSize: Typography.fontSize.base, fontWeight: Typography.fontWeight.medium, color: Colors.textPrimary },
+  pickerPlaceholder: { fontSize: Typography.fontSize.base, color: Colors.gray400 },
+  chevron: { fontSize: 22, color: Colors.gray400 },
+
+  modal: { flex: 1, backgroundColor: Colors.background },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: Spacing[5],
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.surface,
+  },
+  modalTitle: { fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
+  modalClose: { fontSize: 22, color: Colors.textSecondary, padding: Spacing[1] },
+
+  hostelList: { padding: Spacing[4], paddingBottom: Spacing[10] },
+  hostelItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing[4],
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    ...Shadow.sm,
+  },
+  hostelItemSelected: { borderColor: Colors.primary, backgroundColor: Colors.primary + '08' },
+  hostelItemLeft: { gap: 2, flex: 1 },
+  hostelItemName: { fontSize: Typography.fontSize.lg, fontWeight: Typography.fontWeight.bold, color: Colors.textPrimary },
+  hostelItemSub: { fontSize: Typography.fontSize.sm, color: Colors.textSecondary },
+  hostelCheckmark: { fontSize: Typography.fontSize.base, color: Colors.primary, fontWeight: Typography.fontWeight.bold },
 });

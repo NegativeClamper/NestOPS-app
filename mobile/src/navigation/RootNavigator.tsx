@@ -32,6 +32,12 @@ import AddExpenseScreen from '../screens/expenses/AddExpenseScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import PendingVerificationScreen from '../screens/fees/PendingVerificationScreen';
 
+// Rooms
+import RoomListScreen from '../screens/rooms/RoomListScreen';
+import RoomCreateScreen from '../screens/rooms/RoomCreateScreen';
+import RoomDetailScreen from '../screens/rooms/RoomDetailScreen';
+import RoomEditScreen from '../screens/rooms/RoomEditScreen';
+
 // ─── Stacks ──────────────────────────────────────────────────────────────────
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -110,6 +116,10 @@ function SettingsStack() {
         component={PendingVerificationScreen}
         options={{ title: 'Pending Verification' }}
       />
+      <Stack.Screen name="RoomList" component={RoomListScreen} options={{ title: 'Hostel Layout' }} />
+      <Stack.Screen name="RoomCreate" component={RoomCreateScreen} options={{ title: 'Add Room' }} />
+      <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: 'Room Details' }} />
+      <Stack.Screen name="RoomEdit" component={RoomEditScreen} options={{ title: 'Edit Room' }} />
     </Stack.Navigator>
   );
 }

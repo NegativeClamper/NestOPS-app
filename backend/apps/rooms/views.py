@@ -28,8 +28,9 @@ class RoomViewSet(viewsets.ModelViewSet):
     """
     Room CRUD + nested beds listing.
     """
-    queryset = Room.objects.select_related("sharing_type").prefetch_related("beds__resident").all()
+    queryset = Room.objects.select_related("sharing_type", "hostel").prefetch_related("beds__resident").all()
     permission_classes = [IsOwnerOrStaff]
+    filterset_fields = ["hostel"]
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -78,7 +79,7 @@ class BedViewSet(viewsets.ReadOnlyModelViewSet):
     )
     serializer_class = BedSerializer
     permission_classes = [IsOwnerOrStaff]
-    filterset_fields = ["status", "room"]
+    filterset_fields = ["status", "room", "room__hostel"]
 
     def get_permissions(self):
         return [IsOwnerOrStaff()]

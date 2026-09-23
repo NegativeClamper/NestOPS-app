@@ -28,6 +28,13 @@ class SharingType(models.Model):
 class Room(models.Model):
     """A physical room in the hostel."""
 
+    hostel = models.ForeignKey(
+        "hostels.Hostel",
+        on_delete=models.CASCADE,
+        related_name="rooms",
+        null=True,
+        blank=True
+    )
     room_number = models.CharField(max_length=20, unique=True)
     sharing_type = models.ForeignKey(
         SharingType, on_delete=models.PROTECT, related_name="rooms"

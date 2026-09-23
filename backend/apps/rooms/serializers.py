@@ -16,10 +16,13 @@ class BedSerializer(serializers.ModelSerializer):
     resident_name = serializers.SerializerMethodField()
     resident_id = serializers.SerializerMethodField()
 
+    hostel_id = serializers.IntegerField(source="room.hostel_id", read_only=True)
+
     class Meta:
         model = Bed
         fields = [
             "id", "room", "room_number", "sharing_type",
+            "hostel_id",
             "bed_label", "status",
             "resident_id", "resident_name",
             "created_at", "updated_at",
@@ -47,6 +50,7 @@ class BedSerializer(serializers.ModelSerializer):
 
 class RoomSerializer(serializers.ModelSerializer):
     sharing_type_detail = SharingTypeSerializer(source="sharing_type", read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
     beds = BedSerializer(many=True, read_only=True)
     total_beds = serializers.IntegerField(read_only=True)
     vacant_beds = serializers.IntegerField(read_only=True)
@@ -55,7 +59,7 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "id", "room_number", "sharing_type", "sharing_type_detail",
+            "id", "room_number", "hostel", "hostel_name", "sharing_type", "sharing_type_detail",
             "floor", "notes",
             "total_beds", "vacant_beds", "occupied_beds",
             "beds",
@@ -67,6 +71,7 @@ class RoomSerializer(serializers.ModelSerializer):
 class RoomListSerializer(serializers.ModelSerializer):
     """Lighter serializer for list views — no nested beds."""
     sharing_type_name = serializers.CharField(source="sharing_type.name", read_only=True)
+    hostel_name = serializers.CharField(source="hostel.name", read_only=True, default=None)
     monthly_rate = serializers.DecimalField(
         source="sharing_type.monthly_rate", max_digits=10, decimal_places=2, read_only=True
     )
@@ -76,7 +81,7 @@ class RoomListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = [
-            "id", "room_number", "sharing_type", "sharing_type_name",
+            "id", "room_number", "hostel", "hostel_name", "sharing_type", "sharing_type_name",
             "monthly_rate", "floor", "notes",
             "total_beds", "vacant_beds",
             "created_at", "updated_at",

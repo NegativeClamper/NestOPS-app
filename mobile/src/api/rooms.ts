@@ -11,6 +11,7 @@ export interface Bed {
   id: number;
   room: number;
   room_number: string;
+  hostel_id: number | null;
   sharing_type: string;
   bed_label: string;
   status: 'vacant' | 'occupied';
@@ -21,6 +22,8 @@ export interface Bed {
 export interface Room {
   id: number;
   room_number: string;
+  hostel: number | null;
+  hostel_name: string | null;
   sharing_type: number;
   sharing_type_name: string;
   monthly_rate: string;
@@ -53,7 +56,7 @@ export const roomsApi = {
   },
 
   // Rooms
-  list: async (params?: { search?: string; page?: number }): Promise<{ results: Room[]; count: number }> => {
+  list: async (params?: { search?: string; page?: number; hostel?: number }): Promise<{ results: Room[]; count: number }> => {
     const response = await apiClient.get('/rooms/', { params });
     return response.data;
   },
@@ -87,8 +90,8 @@ export const roomsApi = {
     return response.data;
   },
 
-  getVacantBeds: async (): Promise<Bed[]> => {
-    const response = await apiClient.get<Bed[]>('/rooms/beds/', { params: { status: 'vacant' } });
+  getVacantBeds: async (params?: { room__hostel?: number }): Promise<Bed[]> => {
+    const response = await apiClient.get<Bed[]>('/rooms/beds/', { params: { status: 'vacant', ...params } });
     return response.data;
   },
 
