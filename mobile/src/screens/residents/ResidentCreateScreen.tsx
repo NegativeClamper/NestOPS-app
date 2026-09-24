@@ -344,7 +344,7 @@ export default function ResidentCreateScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <FlatList
-            data={vacantBeds}
+            data={Array.isArray(vacantBeds) ? vacantBeds : []}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={styles.hostelList}
             ItemSeparatorComponent={() => <View style={{ height: Spacing[2] }} />}

@@ -91,8 +91,8 @@ export const roomsApi = {
   },
 
   getVacantBeds: async (params?: { room__hostel?: number }): Promise<Bed[]> => {
-    const response = await apiClient.get<Bed[]>('/rooms/beds/', { params: { status: 'vacant', ...params } });
-    return response.data;
+    const response = await apiClient.get('/rooms/beds/', { params: { status: 'vacant', ...params } });
+    return response.data.results ?? response.data;
   },
 
   createBedForRoom: async (roomId: number, bedLabel: string): Promise<Bed> => {

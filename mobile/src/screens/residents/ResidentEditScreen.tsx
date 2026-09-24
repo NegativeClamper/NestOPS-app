@@ -306,8 +306,8 @@ export default function ResidentEditScreen({ route, navigation }: any) {
           <FlatList
             // Show currently assigned bed (if not in vacant list) + vacant beds
             data={[
-               ...(selectedBed && !vacantBeds.some(b => b.id === selectedBed.id) ? [selectedBed] : []),
-               ...vacantBeds
+               ...(selectedBed && Array.isArray(vacantBeds) && !vacantBeds.some(b => b.id === selectedBed.id) ? [selectedBed] : []),
+               ...(Array.isArray(vacantBeds) ? vacantBeds : [])
             ]}
             keyExtractor={(item) => String(item.id)}
             contentContainerStyle={styles.hostelList}
