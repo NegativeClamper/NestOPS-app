@@ -34,19 +34,27 @@ class DashboardView(APIView):
             except (ValueError, TypeError):
                 hostel_id = None
         # Payment / Expense filters when scoped to a hostel
-        payment_qs_filter  = Q(hostel_id=hostel_id) if hostel_id else Q()
-        expense_qs_filter  = Q(hostel_id=hostel_id) if hostel_id else Q()
+        tenant = request.user.tenant
+        payment_qs_filter  = Q(resident__hostel__owner=tenant)
+        expense_qs_filter  = Q(owner=tenant)
+        if hostel_id:
+            payment_qs_filter &= Q(hostel_id=hostel_id)
+            expense_qs_filter &= Q(hostel_id=hostel_id)
 
         # ── Occupancy ─────────────────────────────────────────────────────────
         # Bed occupancy is not per-hostel in this data model (beds belong to
         # rooms, not hostels directly). Keep as global metric; it's still a
         # useful overall indicator even in a per-hostel view.
-        total_beds    = Bed.objects.count()
-        occupied_beds = Bed.objects.filter(status=Bed.Status.OCCUPIED).count()
+        base_beds = Bed.objects.filter(room__hostel__owner=tenant)
+        if hostel_id:
+            base_beds = base_beds.filter(room__hostel_id=hostel_id)
+        
+        total_beds    = base_beds.count()
+        occupied_beds = base_beds.filter(status=Bed.Status.OCCUPIED).count()
         vacant_beds   = total_beds - occupied_beds
 
         vacant_bed_list = (
-            Bed.objects.filter(status=Bed.Status.VACANT)
+            base_beds.filter(status=Bed.Status.VACANT)
             .select_related("room", "room__sharing_type")
             .values("id", "bed_label", "room__room_number", "room__sharing_type__name")
         )
@@ -97,7 +105,7 @@ class DashboardView(APIView):
             })
 
         # ── Pending Dues ──────────────────────────────────────────────────────
-        all_dues = compute_all_dues(hostel_id=hostel_id)
+        all_dues = compute_all_dues(hostel_id=hostel_id, owner=tenant)
         total_outstanding = sum(d["total_balance"] for d in all_dues)
 
         dues_summary = [

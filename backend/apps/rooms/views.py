@@ -19,18 +19,25 @@ class SharingTypeViewSet(viewsets.ModelViewSet):
     Read: any authenticated user.
     Write/Delete: Owner only.
     """
-    queryset = SharingType.objects.all().order_by("monthly_rate")
     serializer_class = SharingTypeSerializer
     permission_classes = [IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        return SharingType.objects.filter(owner=self.request.user.tenant).order_by("monthly_rate")
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.tenant)
 
 
 class RoomViewSet(viewsets.ModelViewSet):
     """
     Room CRUD + nested beds listing.
     """
-    queryset = Room.objects.select_related("sharing_type", "hostel").prefetch_related("beds__resident").all()
     permission_classes = [IsOwnerOrStaff]
     filterset_fields = ["hostel"]
+
+    def get_queryset(self):
+        return Room.objects.filter(hostel__owner=self.request.user.tenant).select_related("sharing_type", "hostel").prefetch_related("beds__resident")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -53,8 +60,10 @@ class RoomViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="occupancy-summary")
     def occupancy_summary(self, request):
         """GET /api/rooms/occupancy-summary/ — quick overview for the dashboard."""
-        total = Bed.objects.count()
-        occupied = Bed.objects.filter(status=Bed.Status.OCCUPIED).count()
+        tenant = request.user.tenant
+        base_query = Bed.objects.filter(room__hostel__owner=tenant)
+        total = base_query.count()
+        occupied = base_query.filter(status=Bed.Status.OCCUPIED).count()
         vacant = total - occupied
         return Response({
             "total_beds": total,
@@ -72,14 +81,16 @@ class BedViewSet(viewsets.ReadOnlyModelViewSet):
     PATCH /api/rooms/beds/<id>/relabel/   — rename a bed label (Owner only)
     DELETE /api/rooms/beds/<id>/delete/   — remove a vacant bed (Owner only, occupied beds rejected)
     """
-    queryset = (
-        Bed.objects.select_related("room", "room__sharing_type")
-        .prefetch_related("resident")
-        .all()
-    )
     serializer_class = BedSerializer
     permission_classes = [IsOwnerOrStaff]
     filterset_fields = ["status", "room", "room__hostel"]
+
+    def get_queryset(self):
+        return (
+            Bed.objects.filter(room__hostel__owner=self.request.user.tenant)
+            .select_related("room", "room__sharing_type")
+            .prefetch_related("resident")
+        )
 
     def get_permissions(self):
         return [IsOwnerOrStaff()]

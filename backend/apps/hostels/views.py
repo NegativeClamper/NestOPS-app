@@ -27,7 +27,6 @@ class HostelViewSet(viewsets.ModelViewSet):
     GET (list/retrieve): any authenticated user (owner or staff).
     POST/PATCH/PUT/DELETE: owner only.
     """
-    queryset = Hostel.objects.prefetch_related("residents").all()
     serializer_class = HostelSerializer
     permission_classes = [IsOwnerOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -35,6 +34,12 @@ class HostelViewSet(viewsets.ModelViewSet):
     search_fields = ["name"]
     ordering_fields = ["name", "monthly_rate"]
     ordering = ["name"]
+
+    def get_queryset(self):
+        return Hostel.objects.filter(owner=self.request.user.tenant).prefetch_related("residents")
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.tenant)
 
     @action(
         detail=True,

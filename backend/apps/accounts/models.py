@@ -18,6 +18,15 @@ class User(AbstractUser):
         default=Role.STAFF,
     )
     phone = models.CharField(max_length=15, blank=True)
+    
+    # For multi-tenancy: if role is staff, this points to their employer (the owner)
+    owner_account = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="staff_members"
+    )
 
     class Meta:
         verbose_name = "User"
@@ -33,3 +42,8 @@ class User(AbstractUser):
     @property
     def is_staff_member(self):
         return self.role == self.Role.STAFF
+
+    @property
+    def tenant(self):
+        """Returns the owner account this user belongs to, or self if they are the owner."""
+        return self if self.is_owner else self.owner_account

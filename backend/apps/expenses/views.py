@@ -18,10 +18,18 @@ class ExpenseCategoryViewSet(viewsets.ModelViewSet):
     Expense category CRUD. Staff can read; Owner can create/edit.
     Cannot delete default categories.
     """
-    queryset = ExpenseCategory.objects.all()
     serializer_class = ExpenseCategorySerializer
     permission_classes = [IsOwnerOrReadOnly]
     pagination_class = None  # categories are a small static list; return bare array
+
+    def get_queryset(self):
+        from django.db.models import Q
+        return ExpenseCategory.objects.filter(
+            Q(owner=self.request.user.tenant) | Q(owner__isnull=True)
+        )
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.tenant)
 
     def destroy(self, request, *args, **kwargs):
         category = self.get_object()
@@ -50,12 +58,15 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     """
     Expense CRUD with category/date filtering and monthly summary.
     """
-    queryset = (
-        Expense.objects.select_related("category", "hostel", "recorded_by").all()
-    )
     serializer_class = ExpenseSerializer
     permission_classes = [IsOwnerOrStaff]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+
+    def get_queryset(self):
+        return Expense.objects.filter(owner=self.request.user.tenant).select_related("category", "hostel", "recorded_by")
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user.tenant, recorded_by=self.request.user)
     filterset_class = ExpenseFilter
     search_fields = ["description", "category__name"]
     ordering_fields = ["date", "amount"]
@@ -77,7 +88,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
         month = int(request.query_params.get("month", today.month))
         hostel_id = request.query_params.get("hostel")
 
-        qs = Expense.objects.filter(date__year=year, date__month=month).select_related("category")
+        tenant = request.user.tenant
+        qs = Expense.objects.filter(owner=tenant, date__year=year, date__month=month).select_related("category")
         if hostel_id:
             qs = qs.filter(hostel_id=hostel_id)
 

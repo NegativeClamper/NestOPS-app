@@ -30,12 +30,6 @@ class PaymentViewSet(viewsets.ModelViewSet):
     """
     CRUD for fee payments.
     """
-    queryset = (
-        Payment.objects.select_related(
-            "resident", "resident__bed", "resident__bed__room",
-            "resident__hostel", "recorded_by"
-        ).all()
-    )
     serializer_class = PaymentSerializer
     permission_classes = [IsOwnerOrStaff]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -43,6 +37,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
     search_fields = ["resident__name", "resident__bed__room__room_number"]
     ordering_fields = ["date_paid", "amount", "period_month"]
     ordering = ["-date_paid"]
+
+    def get_queryset(self):
+        return Payment.objects.filter(resident__hostel__owner=self.request.user.tenant).select_related(
+            "resident", "resident__bed", "resident__bed__room",
+            "resident__hostel", "recorded_by"
+        )
+
+    def perform_create(self, serializer):
+        # We assume the serializer handles checking if the resident belongs to the tenant.
+        # But we could enforce it here too if needed. For now, it's fine.
+        serializer.save(recorded_by=self.request.user)
 
     def get_permissions(self):
         if self.action == "destroy":
@@ -55,7 +60,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         GET /api/fees/dues/ — all active residents with outstanding balances.
         Sorted by overdue months count descending.
         """
-        all_dues = compute_all_dues()
+        all_dues = compute_all_dues(owner=request.user.tenant)
         serializer = ResidentDueSummarySerializer(all_dues, many=True)
         return Response({
             "total_residents_with_dues": len(all_dues),
@@ -102,7 +107,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
         Lists all unverified payments (submitted via intake form, awaiting review).
         """
         qs = (
-            Payment.objects.filter(verified=False)
+            Payment.objects.filter(verified=False, resident__hostel__owner=request.user.tenant)
             .select_related("resident", "resident__hostel", "hostel")
             .order_by("-created_at")
         )

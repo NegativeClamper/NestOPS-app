@@ -8,6 +8,7 @@ import { Colors, Typography } from '../theme';
 
 // Auth
 import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
 
 // Dashboard
 import DashboardScreen from '../screens/dashboard/DashboardScreen';
@@ -167,6 +168,15 @@ function AppTabs() {
   );
 }
 
+function AuthStack() {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+}
+
 // ─── Root Navigator ───────────────────────────────────────────────────────────
 export default function RootNavigator() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -177,7 +187,7 @@ export default function RootNavigator() {
         {isAuthenticated ? (
           <Stack.Screen name="App" component={AppTabs} />
         ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Auth" component={AuthStack} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

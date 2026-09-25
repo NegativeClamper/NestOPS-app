@@ -11,7 +11,15 @@ class Hostel(models.Model):
         BOYS = "boys", "Boys"
         GIRLS = "girls", "Girls"
 
-    name = models.CharField(max_length=100, unique=True)
+    owner = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="hostels",
+        null=True, # temporarily null for migration
+        help_text="The independent business owner who manages this hostel."
+    )
+    name = models.CharField(max_length=100)
+    # Note: I'll remove unique=True from name because it should only be unique per owner, not globally anymore.
     gender = models.CharField(max_length=5, choices=Gender.choices)
     monthly_rate = models.DecimalField(
         max_digits=10,

@@ -1,5 +1,6 @@
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -12,12 +13,38 @@ from .serializers import (
     UserSerializer,
     CreateStaffSerializer,
     ChangePasswordSerializer,
+    RegisterSerializer,
 )
 
 
 class LoginView(TokenObtainPairView):
     """POST /api/auth/login/ — returns JWT access + refresh tokens plus user info."""
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class RegisterView(APIView):
+    """POST /api/auth/register/ — public endpoint for new owners to sign up."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        # Log them in automatically
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "full_name": user.get_full_name(),
+                "role": user.role,
+                "phone": user.phone,
+            }
+        }, status=status.HTTP_201_CREATED)
 
 
 class MeView(APIView):
@@ -69,12 +96,12 @@ class StaffListView(APIView):
     permission_classes = [IsOwner]
 
     def get(self, request):
-        users = User.objects.exclude(id=request.user.id).order_by("username")
+        users = User.objects.filter(owner_account=request.user.tenant).exclude(id=request.user.id).order_by("username")
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
 
     def post(self, request):
-        serializer = CreateStaffSerializer(data=request.data)
+        serializer = CreateStaffSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
@@ -86,7 +113,7 @@ class StaffDetailView(APIView):
 
     def get_object(self, pk, request):
         try:
-            return User.objects.exclude(id=request.user.id).get(pk=pk)
+            return User.objects.filter(owner_account=request.user.tenant).exclude(id=request.user.id).get(pk=pk)
         except User.DoesNotExist:
             return None
 

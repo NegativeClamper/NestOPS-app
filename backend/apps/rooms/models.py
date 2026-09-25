@@ -8,7 +8,14 @@ class SharingType(models.Model):
     The owner can create/edit these at any time from the app's Settings screen.
     """
 
-    name = models.CharField(max_length=50, unique=True)
+    owner = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="sharing_types",
+        null=True,
+        help_text="The owner account that created this fee tier."
+    )
+    name = models.CharField(max_length=50)
     monthly_rate = models.DecimalField(max_digits=10, decimal_places=2)
     max_occupants = models.PositiveIntegerField(
         help_text="Maximum number of residents that can share a room of this type."
@@ -18,6 +25,7 @@ class SharingType(models.Model):
 
     class Meta:
         ordering = ["monthly_rate"]
+        unique_together = [["owner", "name"]]
         verbose_name = "Sharing Type"
         verbose_name_plural = "Sharing Types"
 
@@ -35,7 +43,7 @@ class Room(models.Model):
         null=True,
         blank=True
     )
-    room_number = models.CharField(max_length=20, unique=True)
+    room_number = models.CharField(max_length=20)
     sharing_type = models.ForeignKey(
         SharingType, on_delete=models.PROTECT, related_name="rooms"
     )
@@ -46,6 +54,7 @@ class Room(models.Model):
 
     class Meta:
         ordering = ["room_number"]
+        unique_together = [["hostel", "room_number"]]
         verbose_name = "Room"
         verbose_name_plural = "Rooms"
 

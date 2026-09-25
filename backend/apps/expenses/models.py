@@ -8,13 +8,22 @@ class ExpenseCategory(models.Model):
     Default categories: Food/Groceries, Maintenance, Utilities, Staff Salaries, Other.
     """
 
-    name = models.CharField(max_length=100, unique=True)
+    owner = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="expense_categories",
+        null=True,
+        blank=True,
+        help_text="If null, this is a system default category available to everyone."
+    )
+    name = models.CharField(max_length=100)
     icon = models.CharField(max_length=10, blank=True, help_text="Emoji icon, e.g. 🍛")
     is_default = models.BooleanField(default=False, help_text="System default — not deletable by owner.")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ["name"]
+        unique_together = [["owner", "name"]]
         verbose_name = "Expense Category"
         verbose_name_plural = "Expense Categories"
 
@@ -25,6 +34,12 @@ class ExpenseCategory(models.Model):
 class Expense(models.Model):
     """A single expense record."""
 
+    owner = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.CASCADE,
+        related_name="expenses_owned",
+        null=True,
+    )
     category = models.ForeignKey(
         ExpenseCategory, on_delete=models.PROTECT, related_name="expenses"
     )

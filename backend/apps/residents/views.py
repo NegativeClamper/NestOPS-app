@@ -38,11 +38,11 @@ class ResidentViewSet(viewsets.ModelViewSet):
 
     Filter params: name, room, status, hostel
     """
-    queryset = (
-        Resident.objects.select_related(
-            "bed", "bed__room", "bed__room__sharing_type", "hostel"
-        ).all()
-    )
+    def get_queryset(self):
+        return (
+            Resident.objects.filter(hostel__owner=self.request.user.tenant)
+            .select_related("bed", "bed__room", "bed__room__sharing_type", "hostel")
+        )
     permission_classes = [IsOwnerOrStaff]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ResidentFilter

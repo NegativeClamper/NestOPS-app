@@ -14,6 +14,14 @@ export interface UserInfo {
   phone: string;
 }
 
+export interface RegisterCredentials {
+  username: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  password: string;
+}
+
 export interface LoginResponse {
   access: string;
   refresh: string;
@@ -23,6 +31,14 @@ export interface LoginResponse {
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     const response = await apiClient.post<LoginResponse>('/auth/login/', credentials);
+    const { access, refresh } = response.data;
+    await SecureStore.setItemAsync('access_token', access);
+    await SecureStore.setItemAsync('refresh_token', refresh);
+    return response.data;
+  },
+
+  register: async (credentials: RegisterCredentials): Promise<LoginResponse> => {
+    const response = await apiClient.post<LoginResponse>('/auth/register/', credentials);
     const { access, refresh } = response.data;
     await SecureStore.setItemAsync('access_token', access);
     await SecureStore.setItemAsync('refresh_token', refresh);

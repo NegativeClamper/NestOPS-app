@@ -25,6 +25,24 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "date_joined"]
 
 
+class RegisterSerializer(serializers.ModelSerializer):
+    """Public serializer for new independent owners to sign up."""
+
+    password = serializers.CharField(write_only=True, min_length=8)
+
+    class Meta:
+        model = User
+        fields = ["username", "first_name", "last_name", "phone", "password"]
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        # New users are always Owners (tenants)
+        user = User(**validated_data, role=User.Role.OWNER, owner_account=None)
+        user.set_password(password)
+        user.save()
+        return user
+
+
 class CreateStaffSerializer(serializers.ModelSerializer):
     """Owner-only serializer to create new staff accounts."""
 
@@ -36,7 +54,8 @@ class CreateStaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
-        user = User(**validated_data, role=User.Role.STAFF)
+        owner_account = self.context['request'].user.tenant
+        user = User(**validated_data, role=User.Role.STAFF, owner_account=owner_account)
         user.set_password(password)
         user.save()
         return user

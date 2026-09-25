@@ -14,7 +14,9 @@ import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { Colors, Typography, Spacing, BorderRadius } from '../../theme';
 
-export default function LoginScreen() {
+import { TouchableOpacity } from 'react-native';
+
+export default function LoginScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -88,9 +90,18 @@ export default function LoginScreen() {
             fullWidth
             style={styles.loginBtn}
           />
+          
+          <TouchableOpacity 
+            style={{ alignItems: 'center', marginTop: Spacing[4] }}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={{ color: Colors.primary, fontWeight: '500' }}>
+              Create an account
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>HostelHQ • Internal Staff App</Text>
+        <Text style={styles.footer}>HostelHQ • Platform</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
