@@ -11,6 +11,8 @@ SECRET_KEY = config("SECRET_KEY", default="dev-secret-key-change-in-production")
 
 DEBUG = False
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost").split(",")
 
 DJANGO_APPS = [
