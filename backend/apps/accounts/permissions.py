@@ -9,7 +9,7 @@ class IsOwner(BasePermission):
 
     message = "Only the hostel owner can perform this action."
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # type: ignore[override]
         return bool(request.user and request.user.is_authenticated and request.user.is_owner)
 
 
@@ -21,7 +21,7 @@ class IsOwnerOrStaff(BasePermission):
 
     message = "Authentication required."
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # type: ignore[override]
         return bool(request.user and request.user.is_authenticated)
 
 
@@ -33,7 +33,7 @@ class IsOwnerOrReadOnly(BasePermission):
 
     message = "Only the hostel owner can modify this data."
 
-    def has_permission(self, request, view):
+    def has_permission(self, request, view):  # type: ignore[override]
         if not (request.user and request.user.is_authenticated):
             return False
         if request.method in ("GET", "HEAD", "OPTIONS"):
