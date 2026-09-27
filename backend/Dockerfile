@@ -24,6 +24,4 @@ RUN mkdir -p /app/media
 
 EXPOSE 8000
 
-CMD DJANGO_SETTINGS_MODULE=config.settings.production python manage.py migrate && DJANGO_SETTINGS_MODULE=config.settings.production python manage.py ensure_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
-
-CMD python manage.py migrate
+CMD python manage.py migrate && DJANGO_SETTINGS_MODULE=config.settings.production python manage.py migrate && DJANGO_SETTINGS_MODULE=config.settings.production python manage.py ensure_superuser && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT
