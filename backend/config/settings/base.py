@@ -4,6 +4,7 @@ Django base settings for HostelHQ.
 from pathlib import Path
 from datetime import timedelta
 from decouple import config
+import urllib.parse
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -78,16 +79,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": config("DB_NAME", default="hostelhq"),
-        "USER": config("DB_USER", default="hostelhq"),
-        "PASSWORD": config("DB_PASSWORD", default="hostelhq_secret"),
-        "HOST": config("DB_HOST", default="localhost"),
-        "PORT": config("DB_PORT", default="5432"),
+# Parse DATABASE_URL if available (e.g., Render Postgres)
+_db_url = config("DATABASE_URL", default=None)
+if _db_url:
+    _url = urllib.parse.urlparse(_db_url)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _url.path[1:],
+            "USER": _url.username,
+            "PASSWORD": _url.password,
+            "HOST": _url.hostname,
+            "PORT": _url.port or "5432",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": config("DB_NAME", default="hostelhq"),
+            "USER": config("DB_USER", default="hostelhq"),
+            "PASSWORD": config("DB_PASSWORD", default="hostelhq_secret"),
+            "HOST": config("DB_HOST", default="localhost"),
+            "PORT": config("DB_PORT", default="5432"),
+        }
+    }
 
 AUTH_USER_MODEL = "accounts.User"
 
