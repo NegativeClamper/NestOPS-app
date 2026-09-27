@@ -39,6 +39,8 @@ class ResidentViewSet(viewsets.ModelViewSet):
     Filter params: name, room, status, hostel
     """
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Resident.objects.none()
         return (
             Resident.objects.filter(hostel__owner=self.request.user.tenant)
             .select_related("bed", "bed__room", "bed__room__sharing_type", "hostel")

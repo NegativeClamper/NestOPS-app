@@ -23,6 +23,8 @@ class SharingTypeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsOwnerOrReadOnly]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return SharingType.objects.none()
         return SharingType.objects.filter(owner=self.request.user.tenant).order_by("monthly_rate")
 
     def perform_create(self, serializer):
@@ -37,6 +39,8 @@ class RoomViewSet(viewsets.ModelViewSet):
     filterset_fields = ["hostel"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Room.objects.none()
         return Room.objects.filter(hostel__owner=self.request.user.tenant).select_related("sharing_type", "hostel").prefetch_related("beds__resident")
 
     def get_serializer_class(self):
@@ -86,6 +90,8 @@ class BedViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ["status", "room", "room__hostel"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Bed.objects.none()
         return (
             Bed.objects.filter(room__hostel__owner=self.request.user.tenant)
             .select_related("room", "room__sharing_type")

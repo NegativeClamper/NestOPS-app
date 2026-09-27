@@ -23,6 +23,8 @@ class ExpenseCategoryViewSet(viewsets.ModelViewSet):
     pagination_class = None  # categories are a small static list; return bare array
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return ExpenseCategory.objects.none()
         from django.db.models import Q
         return ExpenseCategory.objects.filter(
             Q(owner=self.request.user.tenant) | Q(owner__isnull=True)
@@ -63,6 +65,8 @@ class ExpenseViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Expense.objects.none()
         return Expense.objects.filter(owner=self.request.user.tenant).select_related("category", "hostel", "recorded_by")
 
     def perform_create(self, serializer):

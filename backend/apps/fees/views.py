@@ -39,6 +39,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ordering = ["-date_paid"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Payment.objects.none()
         return Payment.objects.filter(resident__hostel__owner=self.request.user.tenant).select_related(
             "resident", "resident__bed", "resident__bed__room",
             "resident__hostel", "recorded_by"

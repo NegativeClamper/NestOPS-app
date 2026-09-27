@@ -36,6 +36,8 @@ class HostelViewSet(viewsets.ModelViewSet):
     ordering = ["name"]
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Hostel.objects.none()
         return Hostel.objects.filter(owner=self.request.user.tenant).prefetch_related("residents")
 
     def perform_create(self, serializer):

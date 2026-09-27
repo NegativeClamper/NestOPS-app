@@ -45,5 +45,9 @@ class User(AbstractUser):
 
     @property
     def tenant(self):
-        """Returns the owner account this user belongs to, or self if they are the owner."""
-        return self if self.is_owner else self.owner_account
+        """
+        The tenant-boundary owner for this user. An Owner is their own tenant
+        root (owner_account is None for them); a Staff account's tenant is
+        whichever Owner they belong to.
+        """
+        return self.owner_account or self
