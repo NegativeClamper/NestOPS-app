@@ -147,4 +147,4 @@ The APK download link will appear in the EAS dashboard. Share it with staff via 
 | Mobile       | React Native + Expo SDK           |
 | Charts       | Victory Native                    |
 | State        | Zustand + TanStack Query          |
-| APK Build    | EAS Build                         |
+| APK Build    | EAS Build                         
