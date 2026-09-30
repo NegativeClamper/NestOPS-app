@@ -407,6 +407,25 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </TouchableOpacity>
 
+        {/* Manage Hostels */}
+        {user?.role === 'owner' && (
+          <TouchableOpacity
+            style={styles.navRow}
+            onPress={() => navigation.navigate('HostelList')}
+          >
+            <View style={styles.navRowLeft}>
+              <Text style={styles.navRowIcon}>🏠</Text>
+              <View>
+                <Text style={styles.navRowTitle}>Manage Hostels</Text>
+                <Text style={styles.navRowSub}>Add, edit or remove hostels</Text>
+              </View>
+            </View>
+            <View style={styles.navRowRight}>
+              <Text style={styles.navChevron}>›</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
         {/* Hostel Layouts */}
         {user?.role === 'owner' && (
           <TouchableOpacity

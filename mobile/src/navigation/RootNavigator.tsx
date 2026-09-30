@@ -32,6 +32,8 @@ import AddExpenseScreen from '../screens/expenses/AddExpenseScreen';
 // Settings
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import PendingVerificationScreen from '../screens/fees/PendingVerificationScreen';
+import HostelListScreen from '../screens/settings/HostelListScreen';
+import HostelFormScreen from '../screens/settings/HostelFormScreen';
 
 // Rooms
 import RoomListScreen from '../screens/rooms/RoomListScreen';
@@ -117,6 +119,10 @@ function SettingsStack() {
         component={PendingVerificationScreen}
         options={{ title: 'Pending Verification' }}
       />
+      {/* Hostel management */}
+      <Stack.Screen name="HostelList" component={HostelListScreen} options={{ title: 'My Hostels' }} />
+      <Stack.Screen name="HostelForm" component={HostelFormScreen} options={{ title: 'Add Hostel' }} />
+      {/* Room management */}
       <Stack.Screen name="RoomList" component={RoomListScreen} options={{ title: 'Hostel Layout' }} />
       <Stack.Screen name="RoomCreate" component={RoomCreateScreen} options={{ title: 'Add Room' }} />
       <Stack.Screen name="RoomDetail" component={RoomDetailScreen} options={{ title: 'Room Details' }} />
