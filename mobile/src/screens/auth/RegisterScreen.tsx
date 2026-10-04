@@ -48,8 +48,8 @@ export default function RegisterScreen({ navigation }: any) {
     >
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Sign up to manage your hostels independently</Text>
+          <Text style={styles.title}>NestOPS</Text>
+          <Text style={styles.subtitle}>Create your account to get started</Text>
         </View>
 
         <View style={styles.form}>
@@ -101,6 +101,10 @@ export default function RegisterScreen({ navigation }: any) {
           >
             <Text style={styles.linkText}>Already have an account? Log in</Text>
           </TouchableOpacity>
+          <View style={styles.footerRow}>
+            <Text style={styles.footerText}>A product of </Text>
+            <Text style={[styles.footerText, styles.footerBrand]}>Hadal Corp</Text>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -123,7 +127,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: Typography.fontSize['3xl'],
     fontWeight: Typography.fontWeight.bold,
-    color: Colors.textPrimary,
+    color: Colors.primary,
     marginBottom: Spacing[2],
   },
   subtitle: {
@@ -142,5 +146,19 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.medium,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacing[4],
+  },
+  footerText: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textMuted,
+  },
+  footerBrand: {
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.semibold as any,
   },
 });

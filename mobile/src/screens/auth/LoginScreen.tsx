@@ -54,7 +54,7 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.logoBox}>
             <Text style={styles.logoEmoji}>🏠</Text>
           </View>
-          <Text style={styles.appName}>HostelHQ</Text>
+          <Text style={styles.appName}>NestOPS</Text>
           <Text style={styles.tagline}>Hostel management, simplified.</Text>
         </View>
 
@@ -101,7 +101,10 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.footer}>HostelHQ • Platform</Text>
+        <View style={styles.footerRow}>
+          <Text style={styles.footer}>A product of </Text>
+          <Text style={[styles.footer, styles.footerBrand]}>Hadal Corp</Text>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -155,5 +158,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: Typography.fontSize.xs,
     color: Colors.textMuted,
+  },
+  footerRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerBrand: {
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.semibold as any,
+  },
+  appName: {
+    fontSize: Typography.fontSize['3xl'],
+    fontWeight: Typography.fontWeight.extrabold as any,
+    color: Colors.primary,
+    letterSpacing: -0.5,
   },
 });

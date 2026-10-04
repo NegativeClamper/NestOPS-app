@@ -4,9 +4,14 @@ from .models import User
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """JWT login serializer — includes user info in the token response."""
+    """JWT login serializer — includes user info in the token response.
+    Username matching is case-insensitive: 'Owner', 'OWNER', 'owner' all work.
+    """
 
     def validate(self, attrs):
+        # Normalise username to lowercase so login is case-insensitive.
+        if "username" in attrs:
+            attrs["username"] = attrs["username"].strip().lower()
         data = super().validate(attrs)
         data["user"] = {
             "id": self.user.id,
@@ -36,6 +41,9 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         password = validated_data.pop("password")
+        # Normalise username to lowercase so lookups are always consistent.
+        if "username" in validated_data:
+            validated_data["username"] = validated_data["username"].strip().lower()
         # New users are always Owners (tenants)
         user = User(**validated_data, role=User.Role.OWNER, owner_account=None)
         user.set_password(password)
